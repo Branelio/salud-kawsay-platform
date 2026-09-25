@@ -1,0 +1,12 @@
+{
+  "name": "salud-kawsay-platform",
+  "version": "1.0.0",
+  "description": "Plataforma Omnicanal de Salud Kawsay - Enfermería y Cuidado Domiciliario Ecuador",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix services/api start",
+    "dev:api": "node services/api/src/server.js",
+    "dev:web": "npx http-server apps/web -p 3000 --cors",
+    "dev": "node services/api/src/server.js"
+  }
+}

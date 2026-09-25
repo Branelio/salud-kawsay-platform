@@ -1,0 +1,20 @@
+{
+  "name": "@saludkawsay/api",
+  "version": "1.0.0",
+  "description": "Backend API REST y Webhooks para Salud Kawsay - Enfermería Domiciliaria Ecuador",
+  "main": "dist/server.js",
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev src/server.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}
