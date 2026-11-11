@@ -95,7 +95,27 @@ export function Nurses({ nurses, onOpenBookingWithNurse }) {
             </div>
           ))
         ) : (
-          <p className="empty-msg">Cargando enfermeras del equipo...</p>
+          <div className="glass-card" style={{
+            gridColumn: '1 / -1',
+            textAlign: 'center',
+            padding: '40px 24px',
+            background: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '16px',
+            border: '1px solid #d1fae5'
+          }}>
+            <div style={{ fontSize: '42px', color: '#059669', marginBottom: '14px' }}>
+              <i className="fa-solid fa-user-nurse"></i>
+            </div>
+            <h3 style={{ color: '#064e3b', fontSize: '20px', marginBottom: '8px' }}>
+              Personal de Enfermería Titulado y Verificado en Turnos Rotativos
+            </h3>
+            <p style={{ color: '#475569', maxWidth: '600px', margin: '0 auto 20px', lineHeight: '1.6' }}>
+              Todas nuestras licenciadas y profesionales cuentan con acreditación oficial del MSP, verificación de antecedentes y experiencia certificada en atención en el hogar.
+            </p>
+            <button className="btn-primary" onClick={() => onOpenBookingWithNurse('')}>
+              <i className="fa-solid fa-calendar-check"></i> Agendar Guardia Domiciliaria
+            </button>
+          </div>
         )}
       </div>
     </section>

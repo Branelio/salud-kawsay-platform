@@ -238,6 +238,20 @@ export function App() {
     }
   };
 
+  const handleCreateNurse = async (nursePayload) => {
+    try {
+      const res = await ApiClientAdapter.createNurse(nursePayload);
+      if (res.success) {
+        showToast(`¡Enfermera ${res.data.name} dada de alta con éxito!`, 'success');
+        loadInitialData();
+      } else {
+        showToast(res.error || 'No se pudo registrar la enfermera.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con la API al registrar la enfermera.', 'error');
+    }
+  };
+
   const handleSendWaSimMessage = async (message) => {
     try {
       const res = await ApiClientAdapter.sendWaWebhook('0998765432', message);
@@ -321,6 +335,7 @@ export function App() {
         onOpenClinicalRecord={() => setIsClinicalRecordOpen(true)} 
         onResolveAlert={handleResolveAlert} 
         onUpdateBookingStatus={handleUpdateBookingStatus} 
+        onCreateNurse={handleCreateNurse}
       />
 
       {/* Modals */}

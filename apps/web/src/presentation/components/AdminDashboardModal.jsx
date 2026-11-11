@@ -11,11 +11,36 @@ export function AdminDashboardModal({
   onLogoutAdmin, 
   onOpenClinicalRecord, 
   onResolveAlert, 
-  onUpdateBookingStatus 
+  onUpdateBookingStatus,
+  onCreateNurse
 }) {
   const [activeTab, setActiveTab] = useState('clientes');
+  const [showNurseModal, setShowNurseModal] = useState(false);
+  const [nurseName, setNurseName] = useState('');
+  const [nurseSpecialty, setNurseSpecialty] = useState('Cuidados de Adulto Mayor y Gerontología');
+  const [nurseExp, setNurseExp] = useState('5');
+  const [nursePhone, setNursePhone] = useState('');
+  const [nurseBio, setNurseBio] = useState('');
 
   if (!isOpen) return null;
+
+  const handleAddNurseSubmit = (e) => {
+    e.preventDefault();
+    if (!nurseName || !nursePhone) return;
+    if (onCreateNurse) {
+      onCreateNurse({
+        name: nurseName,
+        specialty: nurseSpecialty,
+        experienceYears: parseInt(nurseExp, 10) || 5,
+        phone: nursePhone,
+        bio: nurseBio || 'Especialista en atención y cuidados integrales en el hogar.'
+      });
+    }
+    setNurseName('');
+    setNursePhone('');
+    setNurseBio('');
+    setShowNurseModal(false);
+  };
 
   // Calculate total revenue from bookings
   const totalRevenue = bookings ? bookings.reduce((sum, b) => sum + (b.totalPriceUSD || 0), 0) : 0;
@@ -253,7 +278,53 @@ export function AdminDashboardModal({
 
         {activeTab === 'enfermeras' && (
           <div className="admin-table-card">
-            <h3><i className="fa-solid fa-user-nurse"></i> Equipo de Enfermería Profesional</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0 }}><i className="fa-solid fa-user-nurse"></i> Equipo de Enfermería Profesional ({nurses ? nurses.length : 0})</h3>
+              <button className="btn-secondary-sm" onClick={() => setShowNurseModal(!showNurseModal)} style={{ cursor: 'pointer' }}>
+                <i className="fa-solid fa-user-plus"></i> + Registrar Nueva Enfermera
+              </button>
+            </div>
+
+            {showNurseModal && (
+              <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1.5px solid #059669' }}>
+                <h4 style={{ color: '#064e3b', marginBottom: '14px', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <i className="fa-solid fa-id-card-clip"></i> Alta de Nueva Profesional de Enfermería
+                </h4>
+                <form onSubmit={handleAddNurseSubmit}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '14px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#1e293b' }}>Nombre y Apellido *</label>
+                      <input type="text" placeholder="Ej: Lic. Elena Morales" value={nurseName} onChange={(e) => setNurseName(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#1e293b' }}>Especialidad *</label>
+                      <input type="text" placeholder="Ej: Cuidado Geriátrico / Heridas" value={nurseSpecialty} onChange={(e) => setNurseSpecialty(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#1e293b' }}>Años de Experiencia *</label>
+                      <input type="number" min="1" max="40" value={nurseExp} onChange={(e) => setNurseExp(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#1e293b' }}>Teléfono Celular *</label>
+                      <input type="tel" placeholder="Ej: 0991234567" value={nursePhone} onChange={(e) => setNursePhone(e.target.value)} required style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px', color: '#1e293b' }}>Resumen / Bio Profesional</label>
+                    <input type="text" placeholder="Breve descripción de su experiencia clínica y vocación" value={nurseBio} onChange={(e) => setNurseBio(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="submit" className="btn-secondary-sm" style={{ background: '#059669', color: '#fff', cursor: 'pointer' }}>
+                      <i className="fa-solid fa-floppy-disk"></i> Guardar y Habilitar Enfermera
+                    </button>
+                    <button type="button" className="btn-secondary-sm" onClick={() => setShowNurseModal(false)} style={{ background: '#94a3b8', color: '#fff', cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
             <div className="table-responsive">
               <table className="admin-table">
                 <thead>
@@ -267,16 +338,24 @@ export function AdminDashboardModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {nurses && nurses.map(n => (
-                    <tr key={n.id}>
-                      <td><strong>{n.name}</strong></td>
-                      <td>{n.specialty}</td>
-                      <td>{n.experienceYears} años</td>
-                      <td>⭐ {n.rating} / 5</td>
-                      <td>{n.phone}</td>
-                      <td><span className="badge-discount" style={{ background: '#10b981' }}>DISPONIBLE</span></td>
+                  {nurses && nurses.length > 0 ? (
+                    nurses.map(n => (
+                      <tr key={n.id}>
+                        <td><strong>{n.name}</strong></td>
+                        <td>{n.specialty}</td>
+                        <td>{n.experienceYears} años</td>
+                        <td>⭐ {n.rating} / 5</td>
+                        <td>{n.phone}</td>
+                        <td><span className="badge-discount" style={{ background: '#10b981' }}>DISPONIBLE</span></td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                        No hay enfermeras registradas en la base de datos. Haz clic en <strong>"+ Registrar Nueva Enfermera"</strong> para agregar personal profesional.
+                      </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

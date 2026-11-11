@@ -93,13 +93,30 @@ export function BookingModal({ isOpen, onClose, defaultService, defaultShift, de
           </div>
 
           <div className="form-group">
-            <label>Enfermera Preferida</label>
-            <select value={nurseId} onChange={(e) => setNurseId(e.target.value)}>
-              <option value="">-- Cualquiera disponible --</option>
-              {nurses && nurses.map(n => (
-                <option key={n.id} value={n.id}>{n.name} ({n.specialty})</option>
-              ))}
-            </select>
+            <label>Asignación de Enfermera</label>
+            {nurses && nurses.length > 0 ? (
+              <select value={nurseId} onChange={(e) => setNurseId(e.target.value)}>
+                <option value="">-- Asignación automática por coordinación médica --</option>
+                {nurses.map(n => (
+                  <option key={n.id} value={n.id}>{n.name} ({n.specialty})</option>
+                ))}
+              </select>
+            ) : (
+              <div style={{
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                color: '#166534',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <i className="fa-solid fa-user-shield" style={{ fontSize: '16px', color: '#059669' }}></i>
+                <span>Asignación automática por coordinación médica según especialidad y cercanía al domicilio.</span>
+              </div>
+            )}
           </div>
 
           <div className="form-group">

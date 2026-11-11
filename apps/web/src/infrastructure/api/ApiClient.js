@@ -39,6 +39,15 @@ export class ApiClientAdapter {
     return res.json();
   }
 
+  static async createNurse(payload) {
+    const res = await fetch(`${API_BASE}/nurses`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
   static async getPatients() {
     const res = await fetch(`${API_BASE}/patients`, { headers: getHeaders() });
     return res.json();
