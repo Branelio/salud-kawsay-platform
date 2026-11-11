@@ -17,7 +17,8 @@ export class AdminAuthUseCase {
 
   async execute(username?: string, password?: string): Promise<AuthResult> {
     const validUsername = username === 'admin' || username === 'admin@saludkawsay.ec';
-    const validPassword = password === 'admin123';
+    const expectedPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const validPassword = password === expectedPassword;
 
     if (validUsername && validPassword) {
       const user = {
@@ -42,7 +43,7 @@ export class AdminAuthUseCase {
 
     return {
       success: false,
-      error: 'Credenciales inválidas. Usar admin / admin123'
+      error: 'Credenciales inválidas. Verifique su usuario y contraseña.'
     };
   }
 }
