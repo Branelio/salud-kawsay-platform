@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
-export function BookingModal({ isOpen, onClose, defaultService, defaultShift, defaultNurseId, nurses, onVerifyCedula, onSubmitBooking }) {
+export function BookingModal({ isOpen, onClose, defaultService, defaultShift, onVerifyCedula, onSubmitBooking }) {
   const [cedula, setCedula] = useState('');
   const [patientName, setPatientName] = useState('');
   const [familyPhone, setFamilyPhone] = useState('');
   const [serviceType, setServiceType] = useState('adulto-mayor');
   const [shiftHours, setShiftHours] = useState('12h-dia');
-  const [nurseId, setNurseId] = useState('');
   const [date, setDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
 
   useEffect(() => {
     if (defaultService) setServiceType(defaultService);
     if (defaultShift) setShiftHours(defaultShift);
-    if (defaultNurseId) setNurseId(defaultNurseId);
-  }, [defaultService, defaultShift, defaultNurseId]);
+  }, [defaultService, defaultShift]);
 
   if (!isOpen) return null;
 
@@ -35,8 +33,8 @@ export function BookingModal({ isOpen, onClose, defaultService, defaultShift, de
       familyPhone,
       serviceType,
       shiftHours,
-      nurseId,
-      nurseName: nurses.find(n => n.id === nurseId)?.name || 'Enfermera de Turno',
+      nurseId: '',
+      nurseName: 'Asignación por Coordinación Médica',
       date
     });
   };
@@ -90,33 +88,6 @@ export function BookingModal({ isOpen, onClose, defaultService, defaultShift, de
                 <option value="puntual">Visita / Procedimiento Puntual — $14 USD</option>
               </select>
             </div>
-          </div>
-
-          <div className="form-group">
-            <label>Asignación de Enfermera</label>
-            {nurses && nurses.length > 0 ? (
-              <select value={nurseId} onChange={(e) => setNurseId(e.target.value)}>
-                <option value="">-- Asignación automática por coordinación médica --</option>
-                {nurses.map(n => (
-                  <option key={n.id} value={n.id}>{n.name} ({n.specialty})</option>
-                ))}
-              </select>
-            ) : (
-              <div style={{
-                background: '#f0fdf4',
-                border: '1px solid #bbf7d0',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                color: '#166534',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <i className="fa-solid fa-user-shield" style={{ fontSize: '16px', color: '#059669' }}></i>
-                <span>Asignación automática por coordinación médica según especialidad y cercanía al domicilio.</span>
-              </div>
-            )}
           </div>
 
           <div className="form-group">

@@ -350,8 +350,6 @@ export function App() {
         onClose={() => setIsBookingOpen(false)} 
         defaultService={bookingService} 
         defaultShift={bookingShift} 
-        defaultNurseId={bookingNurseId} 
-        nurses={nurses} 
         onVerifyCedula={handleVerifyCedula} 
         onSubmitBooking={handleCreateBooking} 
       />
