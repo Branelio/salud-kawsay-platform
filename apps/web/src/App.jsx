@@ -190,6 +190,11 @@ export function App() {
     }
   };
 
+  const handleOpenClinicalRecord = (patient = null) => {
+    setPatientData(patient);
+    setIsClinicalRecordOpen(true);
+  };
+
   const handleSaveClinicalRecord = async (recordPayload) => {
     try {
       const res = await ApiClientAdapter.saveClinicalRecord(recordPayload);
@@ -364,7 +369,7 @@ export function App() {
         alerts={alerts} 
         nurses={nurses} 
         onLogoutAdmin={handleAdminLogout} 
-        onOpenClinicalRecord={() => setIsClinicalRecordOpen(true)} 
+        onOpenClinicalRecord={handleOpenClinicalRecord} 
         onResolveAlert={handleResolveAlert} 
         onUpdateBookingStatus={handleUpdateBookingStatus} 
         onCreateNurse={handleCreateNurse}

@@ -17,7 +17,7 @@ export function ClinicalRecordModal({ isOpen, onClose, selectedPatient, onSubmit
       const cr = selectedPatient.clinicalRecord || {};
       setCedula(selectedPatient.cedula || '');
       setFullName(selectedPatient.fullName || '');
-      setAge(selectedPatient.age || '82');
+      setAge(selectedPatient.age || '');
       setBloodType(selectedPatient.bloodType || 'O+');
       setAllergies(selectedPatient.allergies || '');
       setDiagnosis(cr.primaryDiagnosis || selectedPatient.condition || '');
@@ -25,8 +25,19 @@ export function ClinicalRecordModal({ isOpen, onClose, selectedPatient, onSubmit
       setDoctor(cr.attendingDoctor || '');
       setEmergency(cr.emergencyContact || selectedPatient.familyPhone || '');
       setNotes(cr.specialCareNotes || '');
+    } else {
+      setCedula('');
+      setFullName('');
+      setAge('');
+      setBloodType('O+');
+      setAllergies('');
+      setDiagnosis('');
+      setMeds('');
+      setDoctor('');
+      setEmergency('');
+      setNotes('');
     }
-  }, [selectedPatient]);
+  }, [selectedPatient, isOpen]);
 
   if (!isOpen) return null;
 

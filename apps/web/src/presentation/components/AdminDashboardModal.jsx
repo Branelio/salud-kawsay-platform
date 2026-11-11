@@ -61,7 +61,7 @@ export function AdminDashboardModal({
           <span className="admin-user-pill">
             <i className="fa-solid fa-user-shield"></i> Admin General
           </span>
-          <button className="btn-secondary-sm" onClick={onOpenClinicalRecord}>
+          <button className="btn-secondary-sm" onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>
             <i className="fa-solid fa-notes-medical"></i> Crear/Editar Ficha Clínica
           </button>
           <button className="btn-logout-sm" onClick={onLogoutAdmin}>
@@ -155,7 +155,7 @@ export function AdminDashboardModal({
           <div className="admin-table-card">
             <h3>
               <span><i className="fa-solid fa-address-book"></i> Clientes y Expedientes Médicos</span>
-              <button className="btn-secondary-sm" onClick={onOpenClinicalRecord}>+ Nueva Ficha por Cédula</button>
+              <button className="btn-secondary-sm" onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>+ Nueva Ficha por Cédula</button>
             </h3>
             <div className="table-responsive">
               <table className="admin-table">
@@ -184,7 +184,7 @@ export function AdminDashboardModal({
                         <td>{cr.primaryDiagnosis || p.condition}</td>
                         <td>{p.familyContactName} ({p.familyPhone})</td>
                         <td>
-                          <button className="btn-action-sm" onClick={onOpenClinicalRecord}>
+                          <button className="btn-action-sm" onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(p)}>
                             <i className="fa-solid fa-notes-medical"></i> Ver Ficha
                           </button>
                         </td>
