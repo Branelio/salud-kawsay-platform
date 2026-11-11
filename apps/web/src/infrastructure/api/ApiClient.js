@@ -104,6 +104,24 @@ export class ApiClientAdapter {
     return res.json();
   }
 
+  static async assignNurseToBooking(id, nurseId, nurseName, customPayoutUSD) {
+    const res = await fetch(`${API_BASE}/bookings/${id}/assign-nurse`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ nurseId, nurseName, customPayoutUSD })
+    });
+    return res.json();
+  }
+
+  static async updateBookingFinancials(id, paymentStatus, paymentMethod, nursePayoutUSD) {
+    const res = await fetch(`${API_BASE}/bookings/${id}/financials`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ paymentStatus, paymentMethod, nursePayoutUSD })
+    });
+    return res.json();
+  }
+
   static async getAlerts() {
     const res = await fetch(`${API_BASE}/alerts`, { headers: getHeaders() });
     return res.json();

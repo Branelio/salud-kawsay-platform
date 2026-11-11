@@ -46,6 +46,36 @@ export class BookingsController {
       res.status(400).json({ success: false, error: err.message });
     }
   };
+
+  assignNurse = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { nurseId, nurseName, customPayoutUSD } = req.body;
+      const updated = await this.bookingRepo.assignNurse(id, nurseId, nurseName, customPayoutUSD);
+      if (updated) {
+        res.json({ success: true, message: `Enfermera ${nurseName} asignada a la reserva #${id}`, data: updated });
+      } else {
+        res.status(404).json({ success: false, error: 'Reserva no encontrada' });
+      }
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+
+  updateFinancials = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { paymentStatus, paymentMethod, nursePayoutUSD } = req.body;
+      const updated = await this.bookingRepo.updateFinancials(id, paymentStatus, paymentMethod, nursePayoutUSD);
+      if (updated) {
+        res.json({ success: true, message: `Datos financieros de reserva #${id} actualizados`, data: updated });
+      } else {
+        res.status(404).json({ success: false, error: 'Reserva no encontrada' });
+      }
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
 }
 
 export class ReviewsController {

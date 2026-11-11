@@ -12,9 +12,11 @@ export function AdminDashboardModal({
   onOpenClinicalRecord, 
   onResolveAlert, 
   onUpdateBookingStatus,
-  onCreateNurse
+  onCreateNurse,
+  onAssignNurse,
+  onUpdateFinancials
 }) {
-  const [activeTab, setActiveTab] = useState('clientes');
+  const [activeTab, setActiveTab] = useState('reservas');
   const [showNurseModal, setShowNurseModal] = useState(false);
   const [nurseName, setNurseName] = useState('');
   const [nurseSpecialty, setNurseSpecialty] = useState('Cuidados de Adulto Mayor y Gerontología');
@@ -42,8 +44,12 @@ export function AdminDashboardModal({
     setShowNurseModal(false);
   };
 
-  // Calculate total revenue from bookings
-  const totalRevenue = bookings ? bookings.reduce((sum, b) => sum + (b.totalPriceUSD || 0), 0) : 0;
+  // Financial calculations from stats or bookings
+  const revenue = stats?.totalRevenueUSD ?? (bookings ? bookings.reduce((sum, b) => sum + (b.totalPriceUSD || 0), 0) : 0);
+  const nursePayout = stats?.totalNursePayoutUSD ?? (bookings ? bookings.reduce((sum, b) => sum + (b.nursePayoutUSD || 0), 0) : 0);
+  const netMargin = stats?.netAgencyMarginUSD ?? (revenue - nursePayout);
+  const marginPct = stats?.marginPercentage ?? (revenue > 0 ? Math.round((netMargin / revenue) * 100) : 0);
+  const pendingAssignments = stats?.pendingAssignments ?? (bookings ? bookings.filter(b => !b.assignedNurseId).length : 0);
 
   return (
     <div className="admin-fullscreen-modal">
@@ -68,39 +74,45 @@ export function AdminDashboardModal({
       </div>
 
       <div className="admin-dashboard-body">
-        {/* Metric Cards */}
-        <div className="admin-metrics-grid">
+        {/* Metric Cards - ERP Unit Economics & Operations */}
+        <div className="admin-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
           <div className="admin-metric-card revenue">
-            <i className="fa-solid fa-sack-dollar"></i>
+            <i className="fa-solid fa-hand-holding-dollar" style={{ color: '#0284c7' }}></i>
             <div>
-              <h4>${totalRevenue.toFixed(2)} USD</h4>
-              <span>Presupuesto / Ingresos Totales</span>
+              <h4 style={{ color: '#0369a1' }}>${revenue.toFixed(2)} USD</h4>
+              <span>Facturación Bruta (Clientes)</span>
+            </div>
+          </div>
+
+          <div className="admin-metric-card" style={{ borderColor: '#fed7aa' }}>
+            <i className="fa-solid fa-user-nurse" style={{ color: '#ea580c' }}></i>
+            <div>
+              <h4 style={{ color: '#c2410c' }}>${nursePayout.toFixed(2)} USD</h4>
+              <span>Liquidación a Enfermeras</span>
+            </div>
+          </div>
+
+          <div className="admin-metric-card" style={{ borderColor: '#86efac', background: '#f0fdf4' }}>
+            <i className="fa-solid fa-chart-line" style={{ color: '#059669' }}></i>
+            <div>
+              <h4 style={{ color: '#047857' }}>${netMargin.toFixed(2)} USD</h4>
+              <span>Margen Neto Agencia ({marginPct}%)</span>
+            </div>
+          </div>
+
+          <div className="admin-metric-card alerts" style={{ borderColor: pendingAssignments > 0 ? '#fca5a5' : '#a7f3d0' }}>
+            <i className={pendingAssignments > 0 ? "fa-solid fa-clipboard-user" : "fa-solid fa-circle-check"} style={{ color: pendingAssignments > 0 ? '#dc2626' : '#10b981' }}></i>
+            <div>
+              <h4 style={{ color: pendingAssignments > 0 ? '#b91c1c' : '#047857' }}>{pendingAssignments}</h4>
+              <span>{pendingAssignments > 0 ? 'Guardias por Despachar' : 'Despacho al 100%'}</span>
             </div>
           </div>
 
           <div className="admin-metric-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <i className="fa-solid fa-id-card" style={{ fontSize: '36px', color: '#059669' }}></i>
-              <div>
-                <h4>{patients ? patients.length : 0}</h4>
-                <span>Clientes y Pacientes con Cédula</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="admin-metric-card">
-            <i className="fa-solid fa-calendar-check"></i>
+            <i className="fa-solid fa-id-card" style={{ color: '#059669' }}></i>
             <div>
-              <h4>{stats ? stats.totalBookings : 0}</h4>
-              <span>Reservas de Servicio</span>
-            </div>
-          </div>
-
-          <div className="admin-metric-card alerts">
-            <i className="fa-solid fa-triangle-exclamation"></i>
-            <div>
-              <h4>{stats ? stats.activeAlerts : 0}</h4>
-              <span>Alertas Médicas Activas</span>
+              <h4>{patients ? patients.length : 0}</h4>
+              <span>Pacientes en Expediente</span>
             </div>
           </div>
         </div>
@@ -108,28 +120,33 @@ export function AdminDashboardModal({
         {/* Tab Navigation */}
         <div className="admin-tabs-nav">
           <button 
-            className={`tab-btn ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('clientes')}
-          >
-            <i className="fa-solid fa-users"></i> Directorio de Clientes ({patients ? patients.length : 0})
-          </button>
-          <button 
             className={`tab-btn ${activeTab === 'reservas' ? 'active' : ''}`}
             onClick={() => setActiveTab('reservas')}
           >
-            <i className="fa-solid fa-calendar-days"></i> Gestión de Reservas ({bookings ? bookings.length : 0})
+            <i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas ({bookings ? bookings.length : 0})
+            {pendingAssignments > 0 && (
+              <span style={{ background: '#ef4444', color: '#fff', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', marginLeft: '6px' }}>
+                {pendingAssignments} sin asignar
+              </span>
+            )}
           </button>
           <button 
-            className={`tab-btn ${activeTab === 'alertas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('alertas')}
+            className={`tab-btn ${activeTab === 'clientes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('clientes')}
           >
-            <i className="fa-solid fa-bell"></i> Alertas Médicas ({alerts ? alerts.length : 0})
+            <i className="fa-solid fa-users"></i> Directorio de Pacientes ({patients ? patients.length : 0})
           </button>
           <button 
             className={`tab-btn ${activeTab === 'enfermeras' ? 'active' : ''}`}
             onClick={() => setActiveTab('enfermeras')}
           >
             <i className="fa-solid fa-user-nurse"></i> Equipo de Enfermeras ({nurses ? nurses.length : 0})
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'alertas' ? 'active' : ''}`}
+            onClick={() => setActiveTab('alertas')}
+          >
+            <i className="fa-solid fa-bell"></i> Alertas Médicas ({alerts ? alerts.length : 0})
           </button>
         </div>
 
@@ -182,46 +199,164 @@ export function AdminDashboardModal({
 
         {activeTab === 'reservas' && (
           <div className="admin-table-card">
-            <h3><i className="fa-solid fa-calendar-days"></i> Control de Reservas y Presupuestos</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', color: '#064e3b' }}>
+                  <i className="fa-solid fa-truck-medical"></i> Despacho Operativo & Control Financiero (Unit Economics)
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
+                  Asignación de personal de enfermería en ruta, liquidación de honorarios y estado de cobranza por guardia.
+                </p>
+              </div>
+            </div>
+
             <div className="table-responsive">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Código</th>
-                    <th>Cédula / Paciente</th>
-                    <th>Teléfono Familiar</th>
-                    <th>Servicio / Guardia</th>
-                    <th>Total Presupuesto</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th>Guardia / Fecha</th>
+                    <th>Paciente y Cédula</th>
+                    <th>Contacto Familiar</th>
+                    <th>Servicio / Turno</th>
+                    <th style={{ minWidth: '220px' }}>Enfermera Asignada (Despacho)</th>
+                    <th style={{ minWidth: '170px' }}>Unit Economics (Cobro / Payout / Margen)</th>
+                    <th>Cobranza</th>
+                    <th>Estado Guardia</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings && bookings.map(b => (
-                    <tr key={b.id}>
-                      <td><strong>#{b.id}</strong></td>
-                      <td><strong>{b.patientCedula || '1712345678'}</strong><br/><small>{b.patientName}</small></td>
-                      <td>{b.familyPhone}</td>
-                      <td>{b.serviceType} ({b.shiftHours})</td>
-                      <td><strong style={{ color: '#0284c7', fontSize: '16px' }}>${b.totalPriceUSD} USD</strong></td>
-                      <td>
-                        <span className="badge-discount" style={{ background: b.status === 'completada' ? '#10b981' : '#f59e0b' }}>
-                          {b.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td>
-                        <select 
-                          value={b.status} 
-                          onChange={(e) => onUpdateBookingStatus(b.id, e.target.value)}
-                          style={{ padding: '6px', borderRadius: '6px', fontSize: '13px' }}
-                        >
-                          <option value="en-proceso">En proceso</option>
-                          <option value="confirmada">Confirmada</option>
-                          <option value="completada">Completada</option>
-                        </select>
+                  {bookings && bookings.length > 0 ? (
+                    bookings.map(b => {
+                      const cleanPhone = (b.familyPhone || '').replace(/\D/g, '');
+                      const waLink = `https://wa.me/593${cleanPhone.startsWith('0') ? cleanPhone.slice(1) : cleanPhone}?text=Hola,%20nos%20comunicamos%20de%20Salud%20Kawsay%20para%20coordinar%20el%20servicio%20de%20enfermería%20de%20${encodeURIComponent(b.patientName || 'su familiar')}.`;
+                      const clientPay = b.totalPriceUSD || 0;
+                      const nursePay = b.nursePayoutUSD || 0;
+                      const margin = b.agencyMarginUSD !== undefined ? b.agencyMarginUSD : (clientPay - nursePay);
+
+                      return (
+                        <tr key={b.id}>
+                          <td>
+                            <strong>#{b.id}</strong>
+                            <div style={{ fontSize: '11px', color: '#64748b' }}>
+                              {b.createdAt ? new Date(b.createdAt).toLocaleDateString('es-EC', { day: '2-digit', month: 'short' }) : 'Reciente'}
+                            </div>
+                          </td>
+                          <td>
+                            <strong>{b.patientName}</strong>
+                            <div style={{ fontSize: '12px', color: '#059669', fontFamily: 'monospace' }}>
+                              <i className="fa-solid fa-id-card"></i> {b.patientCedula || 'S/N'}
+                            </div>
+                          </td>
+                          <td>
+                            <div style={{ fontSize: '13px' }}>{b.familyPhone}</div>
+                            {cleanPhone && (
+                              <a 
+                                href={waLink} 
+                                target="_blank" 
+                                rel="noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#059669', fontWeight: 600, marginTop: '2px', textDecoration: 'none' }}
+                              >
+                                <i className="fa-brands fa-whatsapp" style={{ color: '#25D366' }}></i> Abrir Chat
+                              </a>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 600, fontSize: '13px' }}>{b.serviceType}</div>
+                            <span className="badge-discount" style={{ background: '#0284c7', fontSize: '11px' }}>
+                              {b.shiftHours}
+                            </span>
+                          </td>
+                          <td>
+                            <select 
+                              value={b.assignedNurseId || ''}
+                              onChange={(e) => {
+                                const selectedId = e.target.value;
+                                if (!selectedId) {
+                                  if (onAssignNurse) onAssignNurse(b.id, '', '');
+                                } else {
+                                  const selectedNurse = (nurses || []).find(n => n.id === selectedId);
+                                  if (selectedNurse && onAssignNurse) {
+                                    onAssignNurse(b.id, selectedNurse.id, selectedNurse.name);
+                                  }
+                                }
+                              }}
+                              style={{ 
+                                width: '100%', 
+                                padding: '6px 8px', 
+                                borderRadius: '6px', 
+                                fontSize: '12px',
+                                border: b.assignedNurseId ? '1.5px solid #10b981' : '1.5px solid #ef4444',
+                                background: b.assignedNurseId ? '#f0fdf4' : '#fef2f2',
+                                fontWeight: 600,
+                                color: b.assignedNurseId ? '#065f46' : '#991b1b'
+                              }}
+                            >
+                              <option value="">⚠️ Sin Asignar (Requiere Despacho)</option>
+                              {nurses && nurses.map(n => (
+                                <option key={n.id} value={n.id}>
+                                  {n.name} ({n.specialty ? n.specialty.split(' ')[0] : 'Enfermería'})
+                                </option>
+                              ))}
+                            </select>
+                            {b.assignedNurseName && (
+                              <div style={{ fontSize: '11px', color: '#047857', marginTop: '3px' }}>
+                                <i className="fa-solid fa-circle-check"></i> Asignada: <strong>{b.assignedNurseName}</strong>
+                              </div>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ fontSize: '12px', lineHeight: '1.4' }}>
+                              <div>Cobro: <strong style={{ color: '#0284c7' }}>${clientPay.toFixed(2)}</strong></div>
+                              <div>Pago Enf: <span style={{ color: '#d97706', fontWeight: 600 }}>-${nursePay.toFixed(2)}</span></div>
+                              <div>Margen: <strong style={{ color: margin >= 0 ? '#059669' : '#dc2626' }}>+${margin.toFixed(2)}</strong></div>
+                            </div>
+                          </td>
+                          <td>
+                            <select 
+                              value={b.paymentStatus || 'pendiente'}
+                              onChange={(e) => {
+                                if (onUpdateFinancials) {
+                                  onUpdateFinancials(b.id, e.target.value, b.paymentMethod || 'transferencia', b.nursePayoutUSD);
+                                }
+                              }}
+                              style={{ 
+                                padding: '5px 8px', 
+                                borderRadius: '6px', 
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                background: b.paymentStatus === 'pagado' || b.paymentStatus === 'facturado' ? '#dcfce7' : '#fef9c3',
+                                color: b.paymentStatus === 'pagado' || b.paymentStatus === 'facturado' ? '#166534' : '#854d0e',
+                                border: '1px solid #cbd5e1'
+                              }}
+                            >
+                              <option value="pendiente">🟡 Pendiente</option>
+                              <option value="pagado">🟢 Pagado</option>
+                              <option value="facturado">🔵 Facturado</option>
+                            </select>
+                          </td>
+                          <td>
+                            <select 
+                              value={b.status} 
+                              onChange={(e) => onUpdateBookingStatus(b.id, e.target.value)}
+                              style={{ padding: '6px', borderRadius: '6px', fontSize: '12px', fontWeight: 600 }}
+                            >
+                              <option value="pendiente">Pendiente</option>
+                              <option value="asignada">Asignada</option>
+                              <option value="en-proceso">En Proceso</option>
+                              <option value="completada">Completada</option>
+                              <option value="cancelada">Cancelada</option>
+                            </select>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                        No hay reservas registradas en el sistema.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>

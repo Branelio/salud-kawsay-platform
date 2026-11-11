@@ -7,6 +7,12 @@ export interface PlatformStats {
   activeAlerts: number;
   avgRating: string;
   totalReviews: number;
+  // Métricas Financieras y Operativas ERP
+  totalRevenueUSD: number;
+  totalNursePayoutUSD: number;
+  netAgencyMarginUSD: number;
+  marginPercentage: string;
+  pendingAssignments: number;
 }
 
 export class GetStatsUseCase {
@@ -30,14 +36,27 @@ export class GetStatsUseCase {
       ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
       : '5.0';
 
+    const totalRevenueUSD = bookings.reduce((sum, b) => sum + (b.totalPriceUSD || 0), 0);
+    const totalNursePayoutUSD = bookings.reduce((sum, b) => sum + (b.nursePayoutUSD || 0), 0);
+    const netAgencyMarginUSD = Number((totalRevenueUSD - totalNursePayoutUSD).toFixed(2));
+    const marginPercentage = totalRevenueUSD > 0
+      ? ((netAgencyMarginUSD / totalRevenueUSD) * 100).toFixed(1)
+      : '0.0';
+
+    const pendingAssignments = bookings.filter(b => b.status === 'pendiente' || !b.nurseId).length;
+
     return {
       totalBookings: bookings.length,
       activePatients: patients.length,
       totalNurses: nurses.length,
       activeAlerts,
       avgRating,
-      totalReviews: reviews.length
+      totalReviews: reviews.length,
+      totalRevenueUSD,
+      totalNursePayoutUSD,
+      netAgencyMarginUSD,
+      marginPercentage,
+      pendingAssignments
     };
   }
 }
-

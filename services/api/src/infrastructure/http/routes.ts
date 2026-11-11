@@ -97,6 +97,8 @@ export function createApiRouter(): Router {
   router.get('/bookings', bookingsController.getAll);
   router.post('/bookings', bookingsController.create);
   router.put('/bookings/:id/status', bookingsController.updateStatus);
+  router.put('/bookings/:id/assign-nurse', bookingsController.assignNurse);
+  router.put('/bookings/:id/financials', bookingsController.updateFinancials);
 
   // Vital Signs
   router.get('/vitals', vitalsController.getAll);

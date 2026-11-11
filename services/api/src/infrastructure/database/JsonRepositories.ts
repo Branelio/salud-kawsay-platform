@@ -4,7 +4,7 @@ import { ClinicalRecord } from '../../domain/entities/ClinicalRecord';
 import { VitalSignRecord } from '../../domain/entities/VitalSignRecord';
 import { Nurse } from '../../domain/entities/Nurse';
 import { NurseCheckin } from '../../domain/entities/NurseCheckin';
-import { Booking, BookingStatus } from '../../domain/entities/Booking';
+import { Booking, BookingStatus, PaymentStatus, PaymentMethod } from '../../domain/entities/Booking';
 import { MedicalAlert } from '../../domain/entities/MedicalAlert';
 import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
@@ -136,6 +136,26 @@ export class JsonBookingRepository implements IBookingRepository {
     const booking = this.storage.bookings.find(b => b.id === id);
     if (booking) {
       booking.updateStatus(status);
+      this.storage.save();
+      return booking;
+    }
+    return null;
+  }
+
+  async assignNurse(id: string, nurseId: string, nurseName: string, customPayoutUSD?: number): Promise<Booking | null> {
+    const booking = this.storage.bookings.find(b => b.id === id);
+    if (booking) {
+      booking.assignNurse(nurseId, nurseName, customPayoutUSD);
+      this.storage.save();
+      return booking;
+    }
+    return null;
+  }
+
+  async updateFinancials(id: string, paymentStatus?: PaymentStatus, paymentMethod?: PaymentMethod, payoutUSD?: number): Promise<Booking | null> {
+    const booking = this.storage.bookings.find(b => b.id === id);
+    if (booking) {
+      booking.updateFinancials(paymentStatus, paymentMethod, payoutUSD);
       this.storage.save();
       return booking;
     }

@@ -3,7 +3,7 @@ import { ClinicalRecord } from '../entities/ClinicalRecord';
 import { VitalSignRecord } from '../entities/VitalSignRecord';
 import { Nurse } from '../entities/Nurse';
 import { NurseCheckin } from '../entities/NurseCheckin';
-import { Booking, BookingStatus } from '../entities/Booking';
+import { Booking, BookingStatus, PaymentStatus, PaymentMethod } from '../entities/Booking';
 import { MedicalAlert } from '../entities/MedicalAlert';
 import { Review } from '../entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../entities/WhatsAppMessage';
@@ -40,6 +40,8 @@ export interface IBookingRepository {
   getById(id: string): Promise<Booking | null>;
   save(booking: Booking): Promise<Booking>;
   updateStatus(id: string, status: BookingStatus): Promise<Booking | null>;
+  assignNurse(id: string, nurseId: string, nurseName: string, customPayoutUSD?: number): Promise<Booking | null>;
+  updateFinancials(id: string, paymentStatus?: PaymentStatus, paymentMethod?: PaymentMethod, payoutUSD?: number): Promise<Booking | null>;
 }
 
 export interface IAlertRepository {

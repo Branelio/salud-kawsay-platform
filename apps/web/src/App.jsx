@@ -225,6 +225,38 @@ export function App() {
     }
   };
 
+  const handleAssignNurse = async (bookingId, nurseId, nurseName) => {
+    try {
+      const res = await ApiClientAdapter.assignNurseToBooking(bookingId, nurseId, nurseName);
+      if (res.success) {
+        if (nurseId) {
+          showToast(`¡Enfermera ${nurseName} asignada con éxito a la guardia #${bookingId}!`, 'success');
+        } else {
+          showToast(`Guardia #${bookingId} marcada como pendiente de despacho.`, 'info');
+        }
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'No se pudo asignar la enfermera.', 'error');
+      }
+    } catch (err) {
+      showToast('Error al asignar enfermera.', 'error');
+    }
+  };
+
+  const handleUpdateFinancials = async (bookingId, paymentStatus, paymentMethod, nursePayoutUSD) => {
+    try {
+      const res = await ApiClientAdapter.updateBookingFinancials(bookingId, paymentStatus, paymentMethod, nursePayoutUSD);
+      if (res.success) {
+        showToast(`Finanzas de la guardia #${bookingId} actualizadas (${paymentStatus.toUpperCase()}).`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'No se pudo actualizar la información financiera.', 'error');
+      }
+    } catch (err) {
+      showToast('Error actualizando finanzas.', 'error');
+    }
+  };
+
   const handleCreateReview = async (reviewPayload) => {
     try {
       const res = await ApiClientAdapter.createReview(reviewPayload);
@@ -336,6 +368,8 @@ export function App() {
         onResolveAlert={handleResolveAlert} 
         onUpdateBookingStatus={handleUpdateBookingStatus} 
         onCreateNurse={handleCreateNurse}
+        onAssignNurse={handleAssignNurse}
+        onUpdateFinancials={handleUpdateFinancials}
       />
 
       {/* Modals */}
