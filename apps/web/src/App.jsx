@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { ApiClientAdapter } from './infrastructure/api/ApiClient';
+import { useToast } from './presentation/components/Toast';
 import { Navbar } from './presentation/components/Navbar';
 import { Hero } from './presentation/components/Hero';
 import { Calculator } from './presentation/components/Calculator';
 import { Testimonials } from './presentation/components/Testimonials';
 import { Services, Nurses } from './presentation/components/Nurses';
 import { Bitacora } from './presentation/components/Bitacora';
-import { AdminPanel, WhatsAppSim } from './presentation/components/AdminPanel';
 import { AdminDashboardModal } from './presentation/components/AdminDashboardModal';
 import { AdminLoginModal } from './presentation/modals/AdminLoginModal';
 import { BookingModal } from './presentation/modals/BookingModal';
@@ -14,6 +14,7 @@ import { ClinicalRecordModal } from './presentation/modals/ClinicalRecordModal';
 import { ReviewModal } from './presentation/modals/ReviewModal';
 
 export function App() {
+  const { showToast } = useToast();
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [nurses, setNurses] = useState([]);
@@ -115,13 +116,13 @@ export function App() {
         localStorage.setItem('homecare_admin_token', res.token);
         setIsAdminLoginOpen(false);
         setIsAdminDashboardOpen(true);
-        alert('¡Bienvenido Administrador! Abriendo Dashboard General.');
+        showToast('¡Bienvenido Administrador! Abriendo Dashboard.', 'success');
         loadAdminStats();
       } else {
-        alert(res.error || 'Credenciales inválidas.');
+        showToast(res.error || 'Credenciales inválidas.', 'error');
       }
     } catch (err) {
-      alert('Error conectando con la API.');
+      showToast('Error conectando con la API central.', 'error');
     }
   };
 
@@ -129,22 +130,28 @@ export function App() {
     setIsAdminLoggedIn(false);
     setIsAdminDashboardOpen(false);
     localStorage.removeItem('homecare_admin_token');
+    showToast('Sesión administrativa finalizada.', 'info');
   };
 
   const handleVerifyCedula = async (cedula) => {
+    if (!cedula || cedula.trim().length < 9) {
+      showToast('Por favor ingrese una Cédula válida (mínimo 9-10 dígitos).', 'warning');
+      return null;
+    }
     try {
       const res = await ApiClientAdapter.verifyCedula(cedula);
       if (res.success && res.found) {
         setPatientData(res.data);
         setSelectedPatientId(res.data.id);
         loadVitals(res.data.id);
+        showToast(`Paciente ${res.data.fullName} verificado con éxito.`, 'success');
         return res.data;
       } else {
-        alert(`No se encontró paciente con la Cédula ${cedula}.`);
+        showToast(`No se encontró paciente con la Cédula ${cedula}.`, 'warning');
         return null;
       }
     } catch (err) {
-      alert('Error verificando Cédula.');
+      showToast('Error verificando Cédula con el servidor.', 'error');
       return null;
     }
   };
@@ -160,13 +167,13 @@ export function App() {
     try {
       const res = await ApiClientAdapter.registerVitals(vitalsPayload);
       if (res.success) {
-        alert('¡Signos vitales registrados y aviso enviado a WhatsApp!');
+        showToast('¡Signos vitales registrados y alerta/reporte enviado a WhatsApp!', 'success');
         loadVitals(vitalsPayload.patientId);
         loadWaLogs();
         loadAdminStats();
       }
     } catch (err) {
-      alert('Error registrando signos vitales.');
+      showToast('Error registrando signos vitales.', 'error');
     }
   };
 
@@ -174,12 +181,12 @@ export function App() {
     try {
       const res = await ApiClientAdapter.createBooking(bookingPayload);
       if (res.success) {
-        alert(`¡Reserva #${res.data.id} creada con Cédula ${bookingPayload.patientCedula}!`);
+        showToast(`¡Reserva #${res.data.id} creada exitosamente! Notificación enviada.`, 'success');
         setIsBookingOpen(false);
         loadInitialData();
       }
     } catch (err) {
-      alert('Error creando reserva.');
+      showToast('Error creando la reserva.', 'error');
     }
   };
 
@@ -187,33 +194,34 @@ export function App() {
     try {
       const res = await ApiClientAdapter.saveClinicalRecord(recordPayload);
       if (res.success) {
-        alert('¡Ficha Clínica guardada con éxito!');
+        showToast('¡Ficha Clínica guardada con éxito en el expediente!', 'success');
         setIsClinicalRecordOpen(false);
         loadInitialData();
       }
     } catch (err) {
-      alert('Error guardando Ficha Clínica.');
+      showToast('Error guardando Ficha Clínica.', 'error');
     }
   };
 
   const handleResolveAlert = async (alertId) => {
     try {
-      const res = await ApiClientAdapter.resolveAlert(alertId, 'Atendido por administración.');
+      const res = await ApiClientAdapter.resolveAlert(alertId, 'Atendido por administración médica.');
       if (res.success) {
-        alert('Alerta marcada como resuelta.');
+        showToast('Alerta médica marcada como resuelta.', 'success');
         loadAdminStats();
       }
     } catch (err) {
-      alert('Error resolviendo alerta.');
+      showToast('Error resolviendo la alerta.', 'error');
     }
   };
 
   const handleUpdateBookingStatus = async (id, status) => {
     try {
       await ApiClientAdapter.updateBookingStatus(id, status);
+      showToast(`Estado de reserva actualizado a "${status}".`, 'info');
       loadAdminStats();
     } catch (err) {
-      alert('Error actualizando reserva.');
+      showToast('Error actualizando estado de la reserva.', 'error');
     }
   };
 
@@ -221,12 +229,12 @@ export function App() {
     try {
       const res = await ApiClientAdapter.createReview(reviewPayload);
       if (res.success) {
-        alert('¡Muchas gracias por tu recomendación!');
+        showToast('¡Muchas gracias por tu recomendación! Ha sido publicada.', 'success');
         setIsReviewOpen(false);
         loadInitialData();
       }
     } catch (err) {
-      alert('Error publicando recomendación.');
+      showToast('Error publicando recomendación.', 'error');
     }
   };
 
@@ -280,23 +288,6 @@ export function App() {
         onSelectPatient={handleSelectPatient} 
         onVerifyCedula={handleVerifyCedula} 
         onRegisterVitals={handleRegisterVitals} 
-      />
-
-      <AdminPanel 
-        isAdminLoggedIn={isAdminLoggedIn} 
-        stats={stats} 
-        alerts={alerts} 
-        bookings={bookings} 
-        onOpenAdminLogin={() => setIsAdminLoginOpen(true)} 
-        onLogoutAdmin={handleAdminLogout} 
-        onOpenClinicalRecord={() => setIsClinicalRecordOpen(true)} 
-        onResolveAlert={handleResolveAlert} 
-        onUpdateBookingStatus={handleUpdateBookingStatus} 
-      />
-
-      <WhatsAppSim 
-        waLogs={waLogs} 
-        onSendMessage={handleSendWaSimMessage} 
       />
 
       <footer className="footer-banner">

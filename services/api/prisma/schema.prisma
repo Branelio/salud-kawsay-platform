@@ -1,0 +1,194 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  NURSE
+  FAMILY
+}
+
+enum VitalStatus {
+  NORMAL
+  ADVERTENCIA
+  CRITICO
+}
+
+enum BookingStatus {
+  PENDIENTE
+  CONFIRMADA
+  EN_PROCESO
+  COMPLETADA
+  CANCELADA
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         UserRole  @default(FAMILY)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  nurse        Nurse?
+  patient      Patient?  @relation(fields: [patientId], references: [id])
+  patientId    String?
+
+  @@map("users")
+}
+
+model Nurse {
+  id              String         @id @default(uuid())
+  userId          String?        @unique
+  user            User?          @relation(fields: [userId], references: [id])
+  name            String
+  photoUrl        String
+  specialty       String
+  rating          Float          @default(5.0)
+  phone           String
+  experienceYears Int
+  isAvailable     Boolean        @default(true)
+  bio             String?
+  createdAt       DateTime       @default(now())
+
+  bookings        Booking[]
+  vitalSigns      VitalSign[]
+  checkins        NurseCheckin[]
+
+  @@map("nurses")
+}
+
+model Patient {
+  id                String          @id @default(uuid())
+  cedula            String          @unique
+  fullName          String
+  age               Int
+  bloodType         String          @default("O+")
+  allergies         String          @default("Ninguna")
+  condition         String
+  address           String
+  familyContactName String
+  familyPhone       String
+  createdAt         DateTime        @default(now())
+
+  users             User[]
+  clinicalRecord    ClinicalRecord?
+  vitalSigns        VitalSign[]
+  bookings          Booking[]
+  alerts            MedicalAlert[]
+  checkins          NurseCheckin[]
+
+  @@map("patients")
+}
+
+model ClinicalRecord {
+  id               String   @id @default(uuid())
+  patientId        String   @unique
+  patient          Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  cedula           String   @unique
+  primaryDiagnosis String
+  prescribedMeds   String
+  attendingDoctor  String
+  emergencyContact String
+  specialCareNotes String
+  lastUpdated      DateTime @default(now())
+
+  @@map("clinical_records")
+}
+
+model VitalSign {
+  id                     String       @id @default(uuid())
+  patientId              String
+  patient                Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nurseId                String
+  nurse                  Nurse        @relation(fields: [nurseId], references: [id])
+  nurseName              String
+  timestamp              DateTime     @default(now())
+  bloodPressureSystolic  Int
+  bloodPressureDiastolic Int
+  bloodGlucoseMgDl       Int
+  oxygenSaturation       Int
+  heartRateBpm           Int
+  temperatureCelsius     Float
+  medicationAdministered String
+  nurseNotes             String
+  statusFlag             VitalStatus  @default(NORMAL)
+
+  alerts                 MedicalAlert[]
+
+  @@map("vital_signs")
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  patientId     String
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientCedula String
+  patientName   String
+  familyPhone   String
+  nurseId       String?
+  nurse         Nurse?        @relation(fields: [nurseId], references: [id])
+  nurseName     String?
+  serviceType   String
+  date          DateTime
+  shiftHours    String
+  status        BookingStatus @default(PENDIENTE)
+  totalPriceUSD Float
+  createdAt     DateTime      @default(now())
+
+  @@map("bookings")
+}
+
+model MedicalAlert {
+  id            String      @id @default(uuid())
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientName   String
+  vitalId       String?
+  vitalSign     VitalSign?  @relation(fields: [vitalId], references: [id])
+  severity      VitalStatus
+  message       String
+  timestamp     DateTime    @default(now())
+  resolved      Boolean     @default(false)
+  resolvedBy    String?
+  resolvedNotes String?
+
+  @@map("medical_alerts")
+}
+
+model NurseCheckin {
+  id          String   @id @default(uuid())
+  nurseId     String
+  nurse       Nurse    @relation(fields: [nurseId], references: [id])
+  nurseName   String
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patientName String
+  latitude    Float
+  longitude   Float
+  address     String
+  timestamp   DateTime @default(now())
+  status      String   @default("ingreso_confirmado")
+
+  @@map("nurse_checkins")
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  clientName String
+  relation   String
+  photoUrl   String?
+  rating     Float    @default(5.0)
+  comment    String
+  date       DateTime @default(now())
+  isVerified Boolean  @default(true)
+
+  @@map("reviews")
+}
+

@@ -5,7 +5,7 @@ export function BookingModal({ isOpen, onClose, defaultService, defaultShift, de
   const [patientName, setPatientName] = useState('');
   const [familyPhone, setFamilyPhone] = useState('');
   const [serviceType, setServiceType] = useState('adulto-mayor');
-  const [shiftHours, setShiftHours] = useState('8h');
+  const [shiftHours, setShiftHours] = useState('12h-dia');
   const [nurseId, setNurseId] = useState('');
   const [date, setDate] = useState(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
 
@@ -81,12 +81,13 @@ export function BookingModal({ isOpen, onClose, defaultService, defaultShift, de
             </div>
 
             <div className="form-group">
-              <label>Duración del Turno</label>
+              <label>Duración del Turno / Guardia</label>
               <select value={shiftHours} onChange={(e) => setShiftHours(e.target.value)} required>
-                <option value="8h">Guardia de 8 Horas ($45)</option>
-                <option value="12h">Guardia de 12 Horas ($65)</option>
-                <option value="24h">Cuidado 24 Horas ($110)</option>
-                <option value="puntual">Visita Puntual ($25)</option>
+                <option value="12h-dia">Guardia de Día (12 Horas) — $27 USD</option>
+                <option value="12h-noche">Guardia de Velada / Noche (12 Horas) — $33 USD</option>
+                <option value="8h">Guardia Corta (8 Horas) — $20 USD</option>
+                <option value="24h">Cuidado Continuo (24 Horas) — $55 USD</option>
+                <option value="puntual">Visita / Procedimiento Puntual — $14 USD</option>
               </select>
             </div>
           </div>
