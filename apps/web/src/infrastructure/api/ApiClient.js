@@ -163,4 +163,41 @@ export class ApiClientAdapter {
     });
     return res.json();
   }
+
+  static async getCheckins() {
+    const res = await fetch(`${API_BASE}/nurses/checkins`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async registerCheckin(payload) {
+    const res = await fetch(`${API_BASE}/nurses/checkin`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async getMedications() {
+    const res = await fetch(`${API_BASE}/medications`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async createMedication(payload) {
+    const res = await fetch(`${API_BASE}/medications`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async administerMedication(id, payload) {
+    const res = await fetch(`${API_BASE}/medications/${id}/administer`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
 }

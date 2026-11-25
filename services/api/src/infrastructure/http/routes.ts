@@ -9,7 +9,8 @@ import {
   JsonBookingRepository,
   JsonAlertRepository,
   JsonReviewRepository,
-  JsonMessagingService
+  JsonMessagingService,
+  JsonMedicationRepository
 } from '../database/JsonRepositories';
 
 // Use Cases
@@ -26,7 +27,7 @@ import { AddReviewUseCase } from '../../application/use-cases/AddReviewUseCase';
 // Controllers
 import { AuthController, StatsController } from './controllers/AuthAndStatsControllers';
 import { NursesController, PatientsController } from './controllers/NursesAndPatientsControllers';
-import { ClinicalRecordsController, VitalsController, AlertsController } from './controllers/ClinicalAndVitalsControllers';
+import { ClinicalRecordsController, VitalsController, AlertsController, MedicationsController } from './controllers/ClinicalAndVitalsControllers';
 import { BookingsController, ReviewsController, WhatsAppController } from './controllers/BookingsReviewsAndWhatsAppControllers';
 
 export function createApiRouter(): Router {
@@ -41,6 +42,7 @@ export function createApiRouter(): Router {
   const alertRepo = new JsonAlertRepository();
   const reviewRepo = new JsonReviewRepository();
   const messagingService = new JsonMessagingService();
+  const medicationRepo = new JsonMedicationRepository();
 
   // Instantiate Use Cases
   const adminAuthUseCase = new AdminAuthUseCase();
@@ -64,6 +66,7 @@ export function createApiRouter(): Router {
   const bookingsController = new BookingsController(bookingRepo, createBookingUseCase);
   const reviewsController = new ReviewsController(reviewRepo, addReviewUseCase);
   const waController = new WhatsAppController(messagingService);
+  const medicationsController = new MedicationsController(medicationRepo);
 
   // Health
   router.get('/health', (_req, res) => {
@@ -104,6 +107,12 @@ export function createApiRouter(): Router {
   router.get('/vitals', vitalsController.getAll);
   router.get('/vitals/:patientId', vitalsController.getByPatientId);
   router.post('/vitals', vitalsController.register);
+
+  // Kardex / eMAR (Medications)
+  router.get('/medications', medicationsController.getAll);
+  router.get('/medications/:patientId', medicationsController.getByPatientId);
+  router.post('/medications', medicationsController.create);
+  router.post('/medications/:id/administer', medicationsController.administer);
 
   // Alerts
   router.get('/alerts', alertsController.getAll);

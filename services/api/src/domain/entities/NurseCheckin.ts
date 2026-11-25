@@ -9,6 +9,7 @@ export interface NurseCheckinProps {
   address: string;
   timestamp?: string;
   status?: string;
+  eventType?: 'ingreso' | 'egreso';
 }
 
 export class NurseCheckin {
@@ -22,6 +23,7 @@ export class NurseCheckin {
   public readonly address: string;
   public readonly timestamp: string;
   public readonly status: string;
+  public readonly eventType: 'ingreso' | 'egreso';
 
   constructor(props: NurseCheckinProps) {
     this.id = props.id;
@@ -33,7 +35,8 @@ export class NurseCheckin {
     this.longitude = props.longitude;
     this.address = props.address;
     this.timestamp = props.timestamp || new Date().toISOString();
-    this.status = props.status || 'ingreso_confirmado';
+    this.eventType = props.eventType || 'ingreso';
+    this.status = props.status || (this.eventType === 'egreso' ? 'egreso_confirmado' : 'ingreso_confirmado');
   }
 }
 

@@ -8,6 +8,7 @@ import { Booking, BookingStatus, PaymentStatus, PaymentMethod } from '../../doma
 import { MedicalAlert } from '../../domain/entities/MedicalAlert';
 import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
+import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -16,7 +17,8 @@ import {
   IBookingRepository,
   IAlertRepository,
   IReviewRepository,
-  IMessagingService
+  IMessagingService,
+  IMedicationRepository
 } from '../../domain/ports/repositories';
 
 export class JsonPatientRepository implements IPatientRepository {
@@ -223,6 +225,32 @@ export class JsonMessagingService implements IMessagingService {
 
   async getLogs(): Promise<WhatsAppMessage[]> {
     return [...this.storage.whatsappLog];
+  }
+}
+
+export class JsonMedicationRepository implements IMedicationRepository {
+  private storage = JsonStorage.getInstance();
+
+  async getAll(): Promise<MedicationOrder[]> {
+    return [...this.storage.medications];
+  }
+
+  async getByPatientId(patientId: string): Promise<MedicationOrder[]> {
+    return this.storage.medications.filter(m => m.patientId === patientId);
+  }
+
+  async save(order: MedicationOrder): Promise<MedicationOrder> {
+    this.storage.medications.unshift(order);
+    this.storage.save();
+    return order;
+  }
+
+  async logAdministration(id: string, nurseName: string, status: AdministrationStatus, notes?: string): Promise<MedicationOrder | null> {
+    const order = this.storage.medications.find(m => m.id === id);
+    if (!order) return null;
+    order.logAdministration(nurseName, status, notes);
+    this.storage.save();
+    return order;
   }
 }
 

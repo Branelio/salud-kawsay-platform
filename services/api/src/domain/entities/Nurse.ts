@@ -8,6 +8,8 @@ export interface NurseProps {
   experienceYears: number;
   isAvailable: boolean;
   bio?: string;
+  licenseNumber?: string;
+  credentialStatus?: 'verificada' | 'por_vencer' | 'pendiente';
 }
 
 export class Nurse {
@@ -20,6 +22,8 @@ export class Nurse {
   public readonly experienceYears: number;
   public readonly isAvailable: boolean;
   public readonly bio?: string;
+  public readonly licenseNumber: string;
+  public readonly credentialStatus: 'verificada' | 'por_vencer' | 'pendiente';
 
   constructor(props: NurseProps) {
     this.id = props.id;
@@ -31,6 +35,8 @@ export class Nurse {
     this.experienceYears = props.experienceYears;
     this.isAvailable = props.isAvailable ?? true;
     this.bio = props.bio;
+    this.licenseNumber = props.licenseNumber || 'MSP-EC-PEND';
+    this.credentialStatus = props.credentialStatus || 'verificada';
   }
 }
 

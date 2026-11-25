@@ -7,6 +7,7 @@ import { Booking, BookingStatus, PaymentStatus, PaymentMethod } from '../entitie
 import { MedicalAlert } from '../entities/MedicalAlert';
 import { Review } from '../entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../entities/WhatsAppMessage';
+import { MedicationOrder, AdministrationStatus } from '../entities/MedicationOrder';
 
 export interface IPatientRepository {
   getAll(): Promise<Patient[]>;
@@ -59,5 +60,12 @@ export interface IReviewRepository {
 export interface IMessagingService {
   sendMessage(toPhone: string, messageText: string, type: WhatsAppMessageType): Promise<WhatsAppMessage>;
   getLogs(): Promise<WhatsAppMessage[]>;
+}
+
+export interface IMedicationRepository {
+  getAll(): Promise<MedicationOrder[]>;
+  getByPatientId(patientId: string): Promise<MedicationOrder[]>;
+  save(order: MedicationOrder): Promise<MedicationOrder>;
+  logAdministration(id: string, nurseName: string, status: AdministrationStatus, notes?: string): Promise<MedicationOrder | null>;
 }
 

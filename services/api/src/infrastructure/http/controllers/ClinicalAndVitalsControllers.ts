@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { IClinicalRecordRepository, IVitalSignsRepository, IAlertRepository } from '../../../domain/ports/repositories';
+import { IClinicalRecordRepository, IVitalSignsRepository, IAlertRepository, IMedicationRepository } from '../../../domain/ports/repositories';
+import { MedicationOrder } from '../../../domain/entities/MedicationOrder';
 import { SaveClinicalRecordUseCase } from '../../../application/use-cases/SaveClinicalRecordUseCase';
 import { RegisterVitalSignsUseCase } from '../../../application/use-cases/RegisterVitalSignsUseCase';
 import { ResolveAlertUseCase } from '../../../application/use-cases/ResolveAlertUseCase';
@@ -113,3 +114,57 @@ export class AlertsController {
   };
 }
 
+export class MedicationsController {
+  constructor(private medicationRepo: IMedicationRepository) {}
+
+  getAll = async (_req: Request, res: Response) => {
+    try {
+      const meds = await this.medicationRepo.getAll();
+      res.json({ success: true, data: meds });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  };
+
+  getByPatientId = async (req: Request, res: Response) => {
+    try {
+      const meds = await this.medicationRepo.getByPatientId(req.params.patientId);
+      res.json({ success: true, data: meds });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  };
+
+  create = async (req: Request, res: Response) => {
+    try {
+      const order = new MedicationOrder({
+        id: `med-${Math.floor(1000 + Math.random() * 9000)}`,
+        ...req.body
+      });
+      const saved = await this.medicationRepo.save(order);
+      res.status(201).json({ success: true, message: 'Prescripción agregada al Kardex/eMAR', data: saved });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+
+  administer = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { nurseName, status, notes } = req.body;
+      const updated = await this.medicationRepo.logAdministration(
+        id,
+        nurseName || 'Enfermera de Turno',
+        status || 'administrado',
+        notes
+      );
+      if (updated) {
+        res.json({ success: true, message: 'Administración registrada en eMAR', data: updated });
+      } else {
+        res.status(404).json({ success: false, error: 'Orden de medicación no encontrada' });
+      }
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+}

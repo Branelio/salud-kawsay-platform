@@ -9,6 +9,7 @@ import { Booking, BookingStatus } from '../../domain/entities/Booking';
 import { MedicalAlert } from '../../domain/entities/MedicalAlert';
 import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
+import { MedicationOrder } from '../../domain/entities/MedicationOrder';
 
 const DATA_DIR = path.join(__dirname, '../../../data');
 const DATA_FILE = path.join(DATA_DIR, 'database.json');
@@ -25,6 +26,7 @@ export class JsonStorage {
   public alerts: MedicalAlert[] = [];
   public clinicalRecords: ClinicalRecord[] = [];
   public checkins: NurseCheckin[] = [];
+  public medications: MedicationOrder[] = [];
 
   private constructor() {
     this.init();
@@ -55,12 +57,56 @@ export class JsonStorage {
         this.alerts = (data.alerts || []).map((a: any) => new MedicalAlert(a));
         this.clinicalRecords = (data.clinicalRecords || []).map((c: any) => new ClinicalRecord(c));
         this.checkins = (data.checkins || []).map((k: any) => new NurseCheckin(k));
+        this.medications = (data.medications || []).map((m: any) => new MedicationOrder(m));
+        if (this.medications.length === 0) {
+          this.seedDefaultMedications();
+        }
         console.log(`[DATABASE] Base de datos JSON inicializada: ${DATA_FILE}`);
         return;
       } catch (err: any) {
         console.error(`[DATABASE] Error cargando database.json: ${err.message}`);
       }
     }
+    this.save();
+  }
+
+  private seedDefaultMedications() {
+    this.medications = [
+      new MedicationOrder({
+        id: 'med-101',
+        patientId: 'pat-1',
+        patientName: 'Sra. Carmen Rosa Delgado',
+        medicationName: 'Enalapril',
+        dosage: '10 mg',
+        route: 'Oral',
+        schedule: 'Cada 12h (08:00 - 20:00)',
+        prescribedBy: 'Dr. Fernando Salazar (Cardiología)',
+        active: true,
+        lastAdministeredAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        lastAdministeredBy: 'Lic. María Elena Ramos',
+        administrationLogs: [
+          {
+            id: 'adm-1001',
+            timestamp: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+            nurseName: 'Lic. María Elena Ramos',
+            status: 'administrado',
+            notes: 'Toma con desayuno, presión estable 125/82.'
+          }
+        ]
+      }),
+      new MedicationOrder({
+        id: 'med-102',
+        patientId: 'pat-2',
+        patientName: 'Sr. Manuel Fernando Ortiz',
+        medicationName: 'Enoxaparina Sódica',
+        dosage: '40 mg / 0.4 ml',
+        route: 'Subcutánea',
+        schedule: 'Cada 24h (09:00 AM)',
+        prescribedBy: 'Dra. Patricia Vélez (Traumatología)',
+        active: true,
+        administrationLogs: []
+      })
+    ];
     this.save();
   }
 
@@ -75,7 +121,8 @@ export class JsonStorage {
         reviews: this.reviews,
         alerts: this.alerts,
         clinicalRecords: this.clinicalRecords,
-        checkins: this.checkins
+        checkins: this.checkins,
+        medications: this.medications
       };
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
     } catch (err: any) {

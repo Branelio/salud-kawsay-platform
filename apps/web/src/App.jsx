@@ -27,6 +27,8 @@ export function App() {
   const [alerts, setAlerts] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [waLogs, setWaLogs] = useState([]);
+  const [checkins, setCheckins] = useState([]);
+  const [medications, setMedications] = useState([]);
 
   // Modals state
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
@@ -86,6 +88,12 @@ export function App() {
 
       const bookingsRes = await ApiClientAdapter.getBookings();
       if (bookingsRes.success) setBookings(bookingsRes.data);
+
+      const checkinsRes = await ApiClientAdapter.getCheckins();
+      if (checkinsRes.success) setCheckins(checkinsRes.data);
+
+      const medsRes = await ApiClientAdapter.getMedications();
+      if (medsRes.success) setMedications(medsRes.data);
     } catch (err) {
       console.error(err);
     }
@@ -289,6 +297,49 @@ export function App() {
     }
   };
 
+  const handleRegisterCheckin = async (checkinPayload) => {
+    try {
+      const res = await ApiClientAdapter.registerCheckin(checkinPayload);
+      if (res.success) {
+        showToast('Fichaje EVV registrado y notificado por WhatsApp.', 'success');
+        loadAdminStats();
+        loadWaLogs();
+      } else {
+        showToast(res.error || 'No se pudo registrar el fichaje EVV.', 'error');
+      }
+    } catch (err) {
+      showToast('Error registrando fichaje EVV.', 'error');
+    }
+  };
+
+  const handleCreateMedication = async (medPayload) => {
+    try {
+      const res = await ApiClientAdapter.createMedication(medPayload);
+      if (res.success) {
+        showToast(`Prescripción "${res.data.medicationName}" agregada al Kardex/eMAR.`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error agregando medicación.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con la API de Kardex.', 'error');
+    }
+  };
+
+  const handleAdministerMedication = async (medId, payload) => {
+    try {
+      const res = await ApiClientAdapter.administerMedication(medId, payload);
+      if (res.success) {
+        showToast('Administración de dosis registrada en eMAR.', 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error registrando dosis.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con eMAR.', 'error');
+    }
+  };
+
   const handleSendWaSimMessage = async (message) => {
     try {
       const res = await ApiClientAdapter.sendWaWebhook('0998765432', message);
@@ -367,7 +418,9 @@ export function App() {
         patients={patients} 
         bookings={bookings} 
         alerts={alerts} 
-        nurses={nurses} 
+        nurses={nurses}
+        checkins={checkins}
+        medications={medications}
         onLogoutAdmin={handleAdminLogout} 
         onOpenClinicalRecord={handleOpenClinicalRecord} 
         onResolveAlert={handleResolveAlert} 
@@ -375,6 +428,9 @@ export function App() {
         onCreateNurse={handleCreateNurse}
         onAssignNurse={handleAssignNurse}
         onUpdateFinancials={handleUpdateFinancials}
+        onRegisterCheckin={handleRegisterCheckin}
+        onCreateMedication={handleCreateMedication}
+        onAdministerMedication={handleAdministerMedication}
       />
 
       {/* Modals */}
