@@ -40,12 +40,18 @@
       "shiftHours": "12h",
       "status": "en-proceso",
       "totalPriceUSD": 65,
+      "nursePayoutUSD": 47.45,
+      "agencyMarginUSD": 17.55,
+      "paymentStatus": "pendiente",
+      "paymentMethod": "pendiente",
       "createdAt": "2026-08-27T04:58:18.810Z"
     }
   ],
   "vitalLogs": [
     {
+      "id": "vital-3447",
       "patientId": "pat-1",
+      "timestamp": "2026-09-12T01:14:43.857Z",
       "bloodPressureSystolic": 130,
       "bloodPressureDiastolic": 85,
       "bloodGlucoseMgDl": 105,
@@ -54,8 +60,6 @@
       "temperatureCelsius": 36.5,
       "medicationAdministered": "Enalapril 10mg",
       "nurseNotes": "Sincronizacion desde app movil",
-      "id": "vital-3447",
-      "timestamp": "2026-09-12T01:14:43.857Z",
       "statusFlag": "normal"
     },
     {
@@ -147,7 +151,44 @@
       "longitude": -78.4678,
       "address": "Av. Coruña 124, Quito",
       "timestamp": "2026-09-12T01:14:43.855Z",
-      "status": "ingreso_confirmado"
+      "status": "ingreso_confirmado",
+      "eventType": "ingreso"
+    }
+  ],
+  "medications": [
+    {
+      "id": "med-101",
+      "patientId": "pat-1",
+      "patientName": "Sra. Carmen Rosa Delgado",
+      "medicationName": "Enalapril",
+      "dosage": "10 mg",
+      "route": "Oral",
+      "schedule": "Cada 12h (08:00 - 20:00)",
+      "prescribedBy": "Dr. Fernando Salazar (Cardiología)",
+      "active": true,
+      "lastAdministeredAt": "2026-11-24T21:42:27.180Z",
+      "lastAdministeredBy": "Lic. María Elena Ramos",
+      "administrationLogs": [
+        {
+          "id": "adm-1001",
+          "timestamp": "2026-11-24T21:42:27.181Z",
+          "nurseName": "Lic. María Elena Ramos",
+          "status": "administrado",
+          "notes": "Toma con desayuno, presión estable 125/82."
+        }
+      ]
+    },
+    {
+      "id": "med-102",
+      "patientId": "pat-2",
+      "patientName": "Sr. Manuel Fernando Ortiz",
+      "medicationName": "Enoxaparina Sódica",
+      "dosage": "40 mg / 0.4 ml",
+      "route": "Subcutánea",
+      "schedule": "Cada 24h (09:00 AM)",
+      "prescribedBy": "Dra. Patricia Vélez (Traumatología)",
+      "active": true,
+      "administrationLogs": []
     }
   ]
 }

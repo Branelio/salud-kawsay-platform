@@ -12,6 +12,18 @@ import {
   JsonMessagingService,
   JsonMedicationRepository
 } from '../database/JsonRepositories';
+import { isPostgresEnabled } from '../database/PostgresDatabase';
+import {
+  PostgresPatientRepository,
+  PostgresClinicalRecordRepository,
+  PostgresVitalSignsRepository,
+  PostgresNurseRepository,
+  PostgresBookingRepository,
+  PostgresAlertRepository,
+  PostgresReviewRepository,
+  PostgresMessagingService,
+  PostgresMedicationRepository
+} from '../database/PostgresRepositories';
 
 // Use Cases
 import { AdminAuthUseCase } from '../../application/use-cases/AdminAuthUseCase';
@@ -33,16 +45,17 @@ import { BookingsController, ReviewsController, WhatsAppController } from './con
 export function createApiRouter(): Router {
   const router = Router();
 
-  // Instantiate Repositories
-  const patientRepo = new JsonPatientRepository();
-  const clinicalRepo = new JsonClinicalRecordRepository();
-  const vitalsRepo = new JsonVitalSignsRepository();
-  const nurseRepo = new JsonNurseRepository();
-  const bookingRepo = new JsonBookingRepository();
-  const alertRepo = new JsonAlertRepository();
-  const reviewRepo = new JsonReviewRepository();
-  const messagingService = new JsonMessagingService();
-  const medicationRepo = new JsonMedicationRepository();
+  // Instantiate Repositories (PostgreSQL/Neon when DATABASE_URL is set, otherwise local JSON fallback)
+  const usePg = isPostgresEnabled();
+  const patientRepo = usePg ? new PostgresPatientRepository() : new JsonPatientRepository();
+  const clinicalRepo = usePg ? new PostgresClinicalRecordRepository() : new JsonClinicalRecordRepository();
+  const vitalsRepo = usePg ? new PostgresVitalSignsRepository() : new JsonVitalSignsRepository();
+  const nurseRepo = usePg ? new PostgresNurseRepository() : new JsonNurseRepository();
+  const bookingRepo = usePg ? new PostgresBookingRepository() : new JsonBookingRepository();
+  const alertRepo = usePg ? new PostgresAlertRepository() : new JsonAlertRepository();
+  const reviewRepo = usePg ? new PostgresReviewRepository() : new JsonReviewRepository();
+  const messagingService = usePg ? new PostgresMessagingService() : new JsonMessagingService();
+  const medicationRepo = usePg ? new PostgresMedicationRepository() : new JsonMedicationRepository();
 
   // Instantiate Use Cases
   const adminAuthUseCase = new AdminAuthUseCase();
@@ -73,6 +86,7 @@ export function createApiRouter(): Router {
     res.json({
       status: 'ok',
       service: 'Salud Kawsay API Clean Architecture',
+      database: usePg ? 'postgresql-neon' : 'json-local',
       time: new Date().toISOString()
     });
   });
