@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { OdontogramPanel } from './erp/OdontogramPanel';
 import { PediatricsPanel } from './erp/PediatricsPanel';
 import { PrescriptionPanel } from './erp/PrescriptionPanel';
+import { BillingSriPanel } from './erp/BillingSriPanel';
+import { InventoryPanel } from './erp/InventoryPanel';
+import { AgendaPanel } from './erp/AgendaPanel';
 
 export function AdminDashboardModal({ 
   isOpen, 
@@ -15,6 +18,9 @@ export function AdminDashboardModal({
   medications,
   prescriptions,
   specialtyDataMap,
+  invoices,
+  inventory,
+  appointments,
   onLogoutAdmin, 
   onOpenClinicalRecord, 
   onResolveAlert, 
@@ -27,7 +33,12 @@ export function AdminDashboardModal({
   onAdministerMedication,
   onLoadSpecialtyData,
   onSaveSpecialtyData,
-  onCreatePrescription
+  onCreatePrescription,
+  onCreateInvoice,
+  onCreateInventoryItem,
+  onAdjustInventoryStock,
+  onCreateAppointment,
+  onUpdateAppointmentStatus
 }) {
   const [activeTab, setActiveTab] = useState('reservas');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -217,10 +228,13 @@ export function AdminDashboardModal({
 
   const TAB_META = {
     reservas: { title: 'Despacho Operativo & Finanzas', sub: 'Asignación de guardias, Unit Economics y reporte contable CSV' },
+    agenda: { title: 'Agenda Clínica Multi-Especialidad', sub: 'Citas por consultorio, sillón dental y recordatorios por WhatsApp' },
     evv: { title: 'Control de Asistencia GPS (EVV)', sub: 'Auditoría de Check-in / Check-out en domicilio con aviso por WhatsApp' },
     especialidades: { title: 'Suite Clínica Multi-Especialidad', sub: 'Odontograma FDI, Control Pediátrico MSP y Recetario Digital CIE-10' },
     emar: { title: 'Kardex Digital & eMAR', sub: 'Control de medicación programada y confirmación de dosis en tiempo real' },
     clientes: { title: 'Directorio de Pacientes', sub: 'Expedientes médicos unificados por Cédula de Identidad' },
+    facturacion: { title: 'Caja & Pre-Facturación SRI (Ecuador)', sub: 'Comprobantes electrónicos IVA 0% Salud vs 15% Insumos y Corte de Caja' },
+    inventario: { title: 'Inventario Insumos & Lotes ARCSA', sub: 'Control FIFO por lote, fechas de caducidad y alertas de stock crítico' },
     enfermeras: { title: 'Equipo de Salud & Nómina MSP', sub: 'Credenciales SENESCYT/MSP, disponibilidad y honorarios por liquidar' },
     alertas: { title: 'Monitor de Alertas Clínicas', sub: 'Triage en vivo de signos vitales críticos y advertencias' }
   };
@@ -265,6 +279,10 @@ export function AdminDashboardModal({
                   <span className="erp-nav-item-left"><i className="fa-solid fa-map-location-dot"></i> Control EVV (GPS)</span>
                   <span className="erp-nav-badge">{checkins ? checkins.length : 0}</span>
                 </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'agenda' ? 'active' : ''}`} onClick={() => selectTab('agenda')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-calendar-week"></i> Agenda Clínica</span>
+                  <span className="erp-nav-badge">{appointments ? appointments.length : 0}</span>
+                </button>
               </>
             )}
           </div>
@@ -302,6 +320,14 @@ export function AdminDashboardModal({
                 <button type="button" className={`erp-nav-item ${activeTab === 'enfermeras' ? 'active' : ''}`} onClick={() => selectTab('enfermeras')}>
                   <span className="erp-nav-item-left"><i className="fa-solid fa-user-nurse"></i> Equipo y Nómina</span>
                   <span className="erp-nav-badge">{nurses ? nurses.length : 0}</span>
+                </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'facturacion' ? 'active' : ''}`} onClick={() => selectTab('facturacion')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-file-invoice-dollar"></i> Caja & SRI</span>
+                  <span className="erp-nav-badge">{invoices ? invoices.length : 0}</span>
+                </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'inventario' ? 'active' : ''}`} onClick={() => selectTab('inventario')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-boxes-stacked"></i> Inventario ARCSA</span>
+                  <span className="erp-nav-badge">{inventory ? inventory.length : 0}</span>
                 </button>
                 <button type="button" className={`erp-nav-item ${activeTab === 'alertas' ? 'active' : ''}`} onClick={() => selectTab('alertas')}>
                   <span className="erp-nav-item-left"><i className="fa-solid fa-bell"></i> Alertas Médicas</span>
@@ -1148,6 +1174,34 @@ export function AdminDashboardModal({
               );
             })()}
           </div>
+        )}
+
+        {/* TAB 8: AGENDA CLÍNICA MULTI-ESPECIALIDAD */}
+        {activeTab === 'agenda' && (
+          <AgendaPanel
+            appointments={appointments}
+            patients={patients}
+            onCreateAppointment={onCreateAppointment}
+            onUpdateAppointmentStatus={onUpdateAppointmentStatus}
+          />
+        )}
+
+        {/* TAB 9: CAJA & PRE-FACTURACIÓN SRI */}
+        {activeTab === 'facturacion' && (
+          <BillingSriPanel
+            invoices={invoices}
+            patients={patients}
+            onCreateInvoice={onCreateInvoice}
+          />
+        )}
+
+        {/* TAB 10: INVENTARIO INSUMOS & LOTES ARCSA */}
+        {activeTab === 'inventario' && (
+          <InventoryPanel
+            inventory={inventory}
+            onCreateItem={onCreateInventoryItem}
+            onAdjustStock={onAdjustInventoryStock}
+          />
         )}
         </div>
       </main>

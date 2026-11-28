@@ -11,6 +11,7 @@ import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
 import { MedicationOrder } from '../../domain/entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData } from '../../domain/entities/SpecialtyClinical';
+import { InvoiceRecord, InventoryItem, ClinicAppointment } from '../../domain/entities/ClinicOperations';
 
 const DATA_DIR = path.join(__dirname, '../../../data');
 const DATA_FILE = path.join(DATA_DIR, 'database.json');
@@ -30,6 +31,9 @@ export class JsonStorage {
   public medications: MedicationOrder[] = [];
   public prescriptions: MedicalPrescription[] = [];
   public specialtyRecords: Record<string, PatientSpecialtyData> = {};
+  public invoices: InvoiceRecord[] = [];
+  public inventoryItems: InventoryItem[] = [];
+  public appointments: ClinicAppointment[] = [];
 
   private constructor() {
     this.init();
@@ -63,6 +67,12 @@ export class JsonStorage {
         this.medications = (data.medications || []).map((m: any) => new MedicationOrder(m));
         this.prescriptions = (data.prescriptions || []).map((p: any) => new MedicalPrescription(p));
         this.specialtyRecords = data.specialtyRecords || {};
+        this.invoices = (data.invoices || []).map((i: any) => new InvoiceRecord(i));
+        this.inventoryItems = (data.inventoryItems || []).map((it: any) => new InventoryItem(it));
+        this.appointments = (data.appointments || []).map((a: any) => new ClinicAppointment(a));
+        if (this.inventoryItems.length === 0) {
+          this.seedDefaultOperations();
+        }
         if (this.medications.length === 0) {
           this.seedDefaultMedications();
         }
@@ -115,6 +125,20 @@ export class JsonStorage {
     this.save();
   }
 
+  private seedDefaultOperations() {
+    this.inventoryItems = [
+      new InventoryItem({ id: 'inv-101', name: 'Guantes de Nitrilo Estériles (Caja x100)', category: 'Enfermería', sku: 'ENF-GUA-100', lotNumber: 'LOT-2026-A8', expirationDate: '2027-08-15', stock: 42, minStock: 15, unitCostUSD: 7.5, unit: 'caja' }),
+      new InventoryItem({ id: 'inv-102', name: 'Resina Compuesta Nano-Híbrida A2 (3M)', category: 'Odontología', sku: 'ODO-RES-A2', lotNumber: 'LOT-2026-D3', expirationDate: '2027-03-20', stock: 8, minStock: 5, unitCostUSD: 28, unit: 'jeringa' }),
+      new InventoryItem({ id: 'inv-103', name: 'Suero Fisiológico NaCl 0.9% 500ml', category: 'General', sku: 'GEN-SUE-500', lotNumber: 'LOT-2026-S1', expirationDate: '2026-12-30', stock: 12, minStock: 20, unitCostUSD: 1.85, unit: 'frasco' })
+    ];
+    const today = new Date().toISOString().slice(0, 10);
+    this.appointments = [
+      new ClinicAppointment({ id: 'cit-201', patientName: 'Sra. Carmen Rosa Delgado', patientPhone: '0998765432', specialty: 'Medicina General', professionalName: 'Dr. Fernando Salazar', room: 'Consultorio 1', date: today, time: '09:30', reason: 'Control de presión arterial y ajuste de Enalapril', status: 'confirmada' }),
+      new ClinicAppointment({ id: 'cit-202', patientName: 'Mateo Sebastián Vega', patientPhone: '0984412233', specialty: 'Odontología', professionalName: 'Dra. Valeria Mendoza', room: 'Sillón Dental A', date: today, time: '11:00', reason: 'Profilaxis y sellantes molares', status: 'en-sala' })
+    ];
+    this.save();
+  }
+
   public save() {
     try {
       const data = {
@@ -129,7 +153,10 @@ export class JsonStorage {
         checkins: this.checkins,
         medications: this.medications,
         prescriptions: this.prescriptions,
-        specialtyRecords: this.specialtyRecords
+        specialtyRecords: this.specialtyRecords,
+        invoices: this.invoices,
+        inventoryItems: this.inventoryItems,
+        appointments: this.appointments
       };
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
     } catch (err: any) {

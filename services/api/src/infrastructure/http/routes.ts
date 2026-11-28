@@ -11,7 +11,8 @@ import {
   JsonReviewRepository,
   JsonMessagingService,
   JsonMedicationRepository,
-  JsonSpecialtyClinicalRepository
+  JsonSpecialtyClinicalRepository,
+  JsonClinicOperationsRepository
 } from '../database/JsonRepositories';
 import { isPostgresEnabled } from '../database/PostgresDatabase';
 import {
@@ -24,7 +25,8 @@ import {
   PostgresReviewRepository,
   PostgresMessagingService,
   PostgresMedicationRepository,
-  PostgresSpecialtyClinicalRepository
+  PostgresSpecialtyClinicalRepository,
+  PostgresClinicOperationsRepository
 } from '../database/PostgresRepositories';
 
 // Use Cases
@@ -41,7 +43,7 @@ import { AddReviewUseCase } from '../../application/use-cases/AddReviewUseCase';
 // Controllers
 import { AuthController, StatsController } from './controllers/AuthAndStatsControllers';
 import { NursesController, PatientsController } from './controllers/NursesAndPatientsControllers';
-import { ClinicalRecordsController, VitalsController, AlertsController, MedicationsController, SpecialtyClinicalController } from './controllers/ClinicalAndVitalsControllers';
+import { ClinicalRecordsController, VitalsController, AlertsController, MedicationsController, SpecialtyClinicalController, ClinicOperationsController } from './controllers/ClinicalAndVitalsControllers';
 import { BookingsController, ReviewsController, WhatsAppController } from './controllers/BookingsReviewsAndWhatsAppControllers';
 
 export function createApiRouter(): Router {
@@ -59,6 +61,7 @@ export function createApiRouter(): Router {
   const messagingService = usePg ? new PostgresMessagingService() : new JsonMessagingService();
   const medicationRepo = usePg ? new PostgresMedicationRepository() : new JsonMedicationRepository();
   const specialtyRepo = usePg ? new PostgresSpecialtyClinicalRepository() : new JsonSpecialtyClinicalRepository();
+  const clinicOpsRepo = usePg ? new PostgresClinicOperationsRepository() : new JsonClinicOperationsRepository();
 
   // Instantiate Use Cases
   const adminAuthUseCase = new AdminAuthUseCase();
@@ -84,6 +87,7 @@ export function createApiRouter(): Router {
   const waController = new WhatsAppController(messagingService);
   const medicationsController = new MedicationsController(medicationRepo);
   const specialtyController = new SpecialtyClinicalController(specialtyRepo);
+  const clinicOpsController = new ClinicOperationsController(clinicOpsRepo);
 
   // Health
   router.get('/health', (_req, res) => {
@@ -137,6 +141,20 @@ export function createApiRouter(): Router {
   router.post('/prescriptions', specialtyController.createPrescription);
   router.get('/specialty/:patientId', specialtyController.getSpecialtyByPatient);
   router.post('/specialty/:patientId', specialtyController.saveSpecialty);
+
+  // Caja & Pre-Facturación SRI Ecuador
+  router.get('/invoices', clinicOpsController.getInvoices);
+  router.post('/invoices', clinicOpsController.createInvoice);
+
+  // Inventario Insumos & Lotes ARCSA
+  router.get('/inventory', clinicOpsController.getInventory);
+  router.post('/inventory', clinicOpsController.createInventoryItem);
+  router.patch('/inventory/:id/stock', clinicOpsController.adjustInventoryStock);
+
+  // Agenda Clínica Multi-Especialidad
+  router.get('/appointments', clinicOpsController.getAppointments);
+  router.post('/appointments', clinicOpsController.createAppointment);
+  router.put('/appointments/:id/status', clinicOpsController.updateAppointmentStatus);
 
   // Alerts
   router.get('/alerts', alertsController.getAll);

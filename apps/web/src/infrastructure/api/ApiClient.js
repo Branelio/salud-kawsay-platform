@@ -228,4 +228,64 @@ export class ApiClientAdapter {
     });
     return res.json();
   }
+
+  static async getInvoices() {
+    const res = await fetch(`${API_BASE}/invoices`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async createInvoice(payload) {
+    const res = await fetch(`${API_BASE}/invoices`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async getInventory() {
+    const res = await fetch(`${API_BASE}/inventory`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async createInventoryItem(payload) {
+    const res = await fetch(`${API_BASE}/inventory`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async adjustInventoryStock(id, delta) {
+    const res = await fetch(`${API_BASE}/inventory/${id}/stock`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ delta })
+    });
+    return res.json();
+  }
+
+  static async getAppointments() {
+    const res = await fetch(`${API_BASE}/appointments`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async createAppointment(payload) {
+    const res = await fetch(`${API_BASE}/appointments`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async updateAppointmentStatus(id, status) {
+    const res = await fetch(`${API_BASE}/appointments/${id}/status`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ status })
+    });
+    return res.json();
+  }
 }

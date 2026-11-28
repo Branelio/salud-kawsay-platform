@@ -35,6 +35,9 @@ export function App() {
   const [medications, setMedications] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
   const [specialtyDataMap, setSpecialtyDataMap] = useState({});
+  const [invoices, setInvoices] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
   // Modals state
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
@@ -117,6 +120,15 @@ export function App() {
 
       const rxRes = await ApiClientAdapter.getPrescriptions();
       if (rxRes.success) setPrescriptions(rxRes.data);
+
+      const invRes = await ApiClientAdapter.getInvoices();
+      if (invRes.success) setInvoices(invRes.data);
+
+      const stockRes = await ApiClientAdapter.getInventory();
+      if (stockRes.success) setInventory(stockRes.data);
+
+      const apptRes = await ApiClientAdapter.getAppointments();
+      if (apptRes.success) setAppointments(apptRes.data);
     } catch (err) {
       console.error(err);
     }
@@ -403,6 +415,71 @@ export function App() {
     }
   };
 
+  const handleCreateInvoice = async (invoicePayload) => {
+    try {
+      const res = await ApiClientAdapter.createInvoice(invoicePayload);
+      if (res.success) {
+        showToast(`Comprobante SRI ${res.data.invoiceNumber} emitido ($${res.data.totalUSD.toFixed(2)}).`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error emitiendo comprobante.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con facturación SRI.', 'error');
+    }
+  };
+
+  const handleCreateInventoryItem = async (itemPayload) => {
+    try {
+      const res = await ApiClientAdapter.createInventoryItem(itemPayload);
+      if (res.success) {
+        showToast(`Insumo "${res.data.name}" registrado en bodega.`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error registrando insumo.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con inventario.', 'error');
+    }
+  };
+
+  const handleAdjustInventoryStock = async (id, delta) => {
+    try {
+      const res = await ApiClientAdapter.adjustInventoryStock(id, delta);
+      if (res.success) {
+        loadAdminStats();
+      }
+    } catch (err) {
+      showToast('Error actualizando stock.', 'error');
+    }
+  };
+
+  const handleCreateAppointment = async (apptPayload) => {
+    try {
+      const res = await ApiClientAdapter.createAppointment(apptPayload);
+      if (res.success) {
+        showToast(`Cita agendada para ${res.data.patientName} (${res.data.time}).`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error agendando cita.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con agenda clínica.', 'error');
+    }
+  };
+
+  const handleUpdateAppointmentStatus = async (id, status) => {
+    try {
+      const res = await ApiClientAdapter.updateAppointmentStatus(id, status);
+      if (res.success) {
+        showToast(`Estado de cita actualizado a "${status}".`, 'info');
+        loadAdminStats();
+      }
+    } catch (err) {
+      showToast('Error actualizando estado de cita.', 'error');
+    }
+  };
+
   const handleSendWaSimMessage = async (message) => {
     try {
       const res = await ApiClientAdapter.sendWaWebhook('0998765432', message);
@@ -443,6 +520,9 @@ export function App() {
             medications={medications}
             prescriptions={prescriptions}
             specialtyDataMap={specialtyDataMap}
+            invoices={invoices}
+            inventory={inventory}
+            appointments={appointments}
             onLogoutAdmin={handleAdminLogout} 
             onOpenClinicalRecord={handleOpenClinicalRecord} 
             onResolveAlert={handleResolveAlert} 
@@ -456,6 +536,11 @@ export function App() {
             onLoadSpecialtyData={handleLoadSpecialtyData}
             onSaveSpecialtyData={handleSaveSpecialtyData}
             onCreatePrescription={handleCreatePrescription}
+            onCreateInvoice={handleCreateInvoice}
+            onCreateInventoryItem={handleCreateInventoryItem}
+            onAdjustInventoryStock={handleAdjustInventoryStock}
+            onCreateAppointment={handleCreateAppointment}
+            onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
           />
         )}
 

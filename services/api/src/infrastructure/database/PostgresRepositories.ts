@@ -10,6 +10,7 @@ import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
 import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData, createDefaultSpecialtyData } from '../../domain/entities/SpecialtyClinical';
+import { InvoiceRecord, InventoryItem, ClinicAppointment, AppointmentStatus } from '../../domain/entities/ClinicOperations';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -20,7 +21,8 @@ import {
   IReviewRepository,
   IMessagingService,
   IMedicationRepository,
-  ISpecialtyClinicalRepository
+  ISpecialtyClinicalRepository,
+  IClinicOperationsRepository
 } from '../../domain/ports/repositories';
 
 function mapPatient(r: any): Patient {
@@ -521,5 +523,128 @@ export class PostgresSpecialtyClinicalRepository implements ISpecialtyClinicalRe
       [updated.patientId, JSON.stringify(updated.odontogram), updated.dentalTreatmentPlan, JSON.stringify(updated.pediatrics), updated.updatedAt]
     );
     return updated;
+  }
+}
+
+export class PostgresClinicOperationsRepository implements IClinicOperationsRepository {
+  async getInvoices(): Promise<InvoiceRecord[]> {
+    const res = await pgQuery('SELECT * FROM invoices ORDER BY issued_at DESC');
+    return res.rows.map(r => new InvoiceRecord({
+      id: r.id,
+      invoiceNumber: r.invoice_number,
+      sriAccessKey: r.sri_access_key,
+      clientDocument: r.client_document,
+      clientName: r.client_name,
+      clientEmail: r.client_email,
+      paymentMethod: r.payment_method,
+      items: Array.isArray(r.items) ? r.items : [],
+      subtotal0USD: Number(r.subtotal_0_usd),
+      subtotal15USD: Number(r.subtotal_15_usd),
+      ivaUSD: Number(r.iva_usd),
+      totalUSD: Number(r.total_usd),
+      status: r.status,
+      issuedAt: r.issued_at
+    }));
+  }
+
+  async saveInvoice(inv: InvoiceRecord): Promise<InvoiceRecord> {
+    await pgQuery(
+      `INSERT INTO invoices (id, invoice_number, sri_access_key, client_document, client_name, client_email, payment_method, items, subtotal_0_usd, subtotal_15_usd, iva_usd, total_usd, status, issued_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12,$13,$14)`,
+      [inv.id, inv.invoiceNumber, inv.sriAccessKey, inv.clientDocument, inv.clientName, inv.clientEmail, inv.paymentMethod, JSON.stringify(inv.items), inv.subtotal0USD, inv.subtotal15USD, inv.ivaUSD, inv.totalUSD, inv.status, inv.issuedAt]
+    );
+    return inv;
+  }
+
+  async getInventory(): Promise<InventoryItem[]> {
+    const res = await pgQuery('SELECT * FROM inventory_items ORDER BY name ASC');
+    return res.rows.map(r => new InventoryItem({
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      sku: r.sku,
+      lotNumber: r.lot_number,
+      expirationDate: r.expiration_date,
+      stock: r.stock,
+      minStock: r.min_stock,
+      unitCostUSD: Number(r.unit_cost_usd),
+      unit: r.unit
+    }));
+  }
+
+  async saveInventoryItem(item: InventoryItem): Promise<InventoryItem> {
+    await pgQuery(
+      `INSERT INTO inventory_items (id, name, category, sku, lot_number, expiration_date, stock, min_stock, unit_cost_usd, unit)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [item.id, item.name, item.category, item.sku, item.lotNumber, item.expirationDate, item.stock, item.minStock, item.unitCostUSD, item.unit]
+    );
+    return item;
+  }
+
+  async adjustInventoryStock(id: string, delta: number): Promise<InventoryItem | null> {
+    const res = await pgQuery(
+      `UPDATE inventory_items SET stock = GREATEST(0, stock + $2) WHERE id = $1 RETURNING *`,
+      [id, delta]
+    );
+    const r = res.rows[0];
+    if (!r) return null;
+    return new InventoryItem({
+      id: r.id,
+      name: r.name,
+      category: r.category,
+      sku: r.sku,
+      lotNumber: r.lot_number,
+      expirationDate: r.expiration_date,
+      stock: r.stock,
+      minStock: r.min_stock,
+      unitCostUSD: Number(r.unit_cost_usd),
+      unit: r.unit
+    });
+  }
+
+  async getAppointments(): Promise<ClinicAppointment[]> {
+    const res = await pgQuery('SELECT * FROM clinic_appointments ORDER BY date DESC, time ASC');
+    return res.rows.map(r => new ClinicAppointment({
+      id: r.id,
+      patientName: r.patient_name,
+      patientPhone: r.patient_phone,
+      specialty: r.specialty,
+      professionalName: r.professional_name,
+      room: r.room,
+      date: r.date,
+      time: r.time,
+      reason: r.reason,
+      status: r.status
+    }));
+  }
+
+  async saveAppointment(appt: ClinicAppointment): Promise<ClinicAppointment> {
+    await pgQuery(
+      `INSERT INTO clinic_appointments (id, patient_name, patient_phone, specialty, professional_name, room, date, time, reason, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [appt.id, appt.patientName, appt.patientPhone, appt.specialty, appt.professionalName, appt.room, appt.date, appt.time, appt.reason, appt.status]
+    );
+    return appt;
+  }
+
+  async updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<ClinicAppointment | null> {
+    const res = await pgQuery(
+      'UPDATE clinic_appointments SET status = $2 WHERE id = $1 RETURNING *',
+      [id, status]
+    );
+    const r = res.rows[0];
+    if (!r) return null;
+    return new ClinicAppointment({
+      id: r.id,
+      patientName: r.patient_name,
+      patientPhone: r.patient_phone,
+      specialty: r.specialty,
+      professionalName: r.professional_name,
+      room: r.room,
+      date: r.date,
+      time: r.time,
+      reason: r.reason,
+      status: r.status
+    });
   }
 }

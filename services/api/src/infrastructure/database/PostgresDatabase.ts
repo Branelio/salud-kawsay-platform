@@ -213,6 +213,49 @@ export async function ensurePostgresSchema(): Promise<void> {
           pediatrics JSONB NOT NULL DEFAULT '{}'::jsonb,
           updated_at TEXT NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS invoices (
+          id TEXT PRIMARY KEY,
+          invoice_number TEXT NOT NULL,
+          sri_access_key TEXT NOT NULL,
+          client_document TEXT NOT NULL,
+          client_name TEXT NOT NULL,
+          client_email TEXT NOT NULL,
+          payment_method TEXT NOT NULL,
+          items JSONB NOT NULL DEFAULT '[]'::jsonb,
+          subtotal_0_usd REAL NOT NULL DEFAULT 0,
+          subtotal_15_usd REAL NOT NULL DEFAULT 0,
+          iva_usd REAL NOT NULL DEFAULT 0,
+          total_usd REAL NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'autorizado',
+          issued_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS inventory_items (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          category TEXT NOT NULL,
+          sku TEXT NOT NULL,
+          lot_number TEXT NOT NULL,
+          expiration_date TEXT NOT NULL,
+          stock INTEGER NOT NULL DEFAULT 0,
+          min_stock INTEGER NOT NULL DEFAULT 10,
+          unit_cost_usd REAL NOT NULL DEFAULT 0,
+          unit TEXT NOT NULL DEFAULT 'unidad'
+        );
+
+        CREATE TABLE IF NOT EXISTS clinic_appointments (
+          id TEXT PRIMARY KEY,
+          patient_name TEXT NOT NULL,
+          patient_phone TEXT NOT NULL,
+          specialty TEXT NOT NULL,
+          professional_name TEXT NOT NULL,
+          room TEXT NOT NULL,
+          date TEXT NOT NULL,
+          time TEXT NOT NULL,
+          reason TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'confirmada'
+        );
       `);
 
       // Seed baseline patients & Kardex orders if empty
@@ -231,6 +274,30 @@ export async function ensurePostgresSchema(): Promise<void> {
             ('med-102', 'pat-2', 'Sr. Manuel Fernando Ortiz', 'Enoxaparina Sódica', '40 mg / 0.4 ml', 'Subcutánea', 'Cada 24h (09:00 AM)', 'Dra. Patricia Vélez (Traumatología)', TRUE, '[]'::jsonb)
           ON CONFLICT (id) DO NOTHING;
         `);
+      }
+
+      const invCountRes = await db.query('SELECT COUNT(*)::int AS count FROM inventory_items');
+      if (invCountRes.rows[0].count === 0) {
+        await db.query(`
+          INSERT INTO inventory_items (id, name, category, sku, lot_number, expiration_date, stock, min_stock, unit_cost_usd, unit)
+          VALUES
+            ('inv-101', 'Guantes de Nitrilo Estériles (Caja x100)', 'Enfermería', 'ENF-GUA-100', 'LOT-2026-A8', '2027-08-15', 42, 15, 7.50, 'caja'),
+            ('inv-102', 'Resina Compuesta Nano-Híbrida A2 (3M)', 'Odontología', 'ODO-RES-A2', 'LOT-2026-D3', '2027-03-20', 8, 5, 28.00, 'jeringa'),
+            ('inv-103', 'Suero Fisiológico NaCl 0.9% 500ml', 'General', 'GEN-SUE-500', 'LOT-2026-S1', '2026-12-30', 12, 20, 1.85, 'frasco')
+          ON CONFLICT (id) DO NOTHING;
+        `);
+      }
+
+      const apptCountRes = await db.query('SELECT COUNT(*)::int AS count FROM clinic_appointments');
+      if (apptCountRes.rows[0].count === 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        await db.query(`
+          INSERT INTO clinic_appointments (id, patient_name, patient_phone, specialty, professional_name, room, date, time, reason, status)
+          VALUES
+            ('cit-201', 'Sra. Carmen Rosa Delgado', '0998765432', 'Medicina General', 'Dr. Fernando Salazar', 'Consultorio 1', $1, '09:30', 'Control de presión arterial y ajuste de Enalapril', 'confirmada'),
+            ('cit-202', 'Mateo Sebastián Vega', '0984412233', 'Odontología', 'Dra. Valeria Mendoza', 'Sillón Dental A', $1, '11:00', 'Profilaxis y sellantes molares', 'en-sala')
+          ON CONFLICT (id) DO NOTHING;
+        `, [today]);
       }
     })();
   }

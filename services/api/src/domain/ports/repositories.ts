@@ -9,6 +9,7 @@ import { Review } from '../entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../entities/WhatsAppMessage';
 import { MedicationOrder, AdministrationStatus } from '../entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData } from '../entities/SpecialtyClinical';
+import { InvoiceRecord, InventoryItem, ClinicAppointment, AppointmentStatus } from '../entities/ClinicOperations';
 
 export interface IPatientRepository {
   getAll(): Promise<Patient[]>;
@@ -75,5 +76,16 @@ export interface ISpecialtyClinicalRepository {
   savePrescription(rx: MedicalPrescription): Promise<MedicalPrescription>;
   getSpecialtyByPatientId(patientId: string): Promise<PatientSpecialtyData>;
   saveSpecialtyData(data: PatientSpecialtyData): Promise<PatientSpecialtyData>;
+}
+
+export interface IClinicOperationsRepository {
+  getInvoices(): Promise<InvoiceRecord[]>;
+  saveInvoice(invoice: InvoiceRecord): Promise<InvoiceRecord>;
+  getInventory(): Promise<InventoryItem[]>;
+  saveInventoryItem(item: InventoryItem): Promise<InventoryItem>;
+  adjustInventoryStock(id: string, delta: number): Promise<InventoryItem | null>;
+  getAppointments(): Promise<ClinicAppointment[]>;
+  saveAppointment(appt: ClinicAppointment): Promise<ClinicAppointment>;
+  updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<ClinicAppointment | null>;
 }
 

@@ -10,6 +10,7 @@ import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
 import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData, createDefaultSpecialtyData } from '../../domain/entities/SpecialtyClinical';
+import { InvoiceRecord, InventoryItem, ClinicAppointment, AppointmentStatus } from '../../domain/entities/ClinicOperations';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -20,7 +21,8 @@ import {
   IReviewRepository,
   IMessagingService,
   IMedicationRepository,
-  ISpecialtyClinicalRepository
+  ISpecialtyClinicalRepository,
+  IClinicOperationsRepository
 } from '../../domain/ports/repositories';
 
 export class JsonPatientRepository implements IPatientRepository {
@@ -278,6 +280,56 @@ export class JsonSpecialtyClinicalRepository implements ISpecialtyClinicalReposi
     this.storage.specialtyRecords[data.patientId] = updated;
     this.storage.save();
     return updated;
+  }
+}
+
+export class JsonClinicOperationsRepository implements IClinicOperationsRepository {
+  private storage = JsonStorage.getInstance();
+
+  async getInvoices(): Promise<InvoiceRecord[]> {
+    return [...this.storage.invoices];
+  }
+
+  async saveInvoice(invoice: InvoiceRecord): Promise<InvoiceRecord> {
+    this.storage.invoices.unshift(invoice);
+    this.storage.save();
+    return invoice;
+  }
+
+  async getInventory(): Promise<InventoryItem[]> {
+    return [...this.storage.inventoryItems];
+  }
+
+  async saveInventoryItem(item: InventoryItem): Promise<InventoryItem> {
+    this.storage.inventoryItems.unshift(item);
+    this.storage.save();
+    return item;
+  }
+
+  async adjustInventoryStock(id: string, delta: number): Promise<InventoryItem | null> {
+    const item = this.storage.inventoryItems.find(i => i.id === id);
+    if (!item) return null;
+    item.stock = Math.max(0, item.stock + delta);
+    this.storage.save();
+    return item;
+  }
+
+  async getAppointments(): Promise<ClinicAppointment[]> {
+    return [...this.storage.appointments];
+  }
+
+  async saveAppointment(appt: ClinicAppointment): Promise<ClinicAppointment> {
+    this.storage.appointments.unshift(appt);
+    this.storage.save();
+    return appt;
+  }
+
+  async updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<ClinicAppointment | null> {
+    const appt = this.storage.appointments.find(a => a.id === id);
+    if (!appt) return null;
+    appt.status = status;
+    this.storage.save();
+    return appt;
   }
 }
 
