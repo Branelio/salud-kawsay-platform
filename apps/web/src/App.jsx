@@ -12,9 +12,13 @@ import { AdminLoginModal } from './presentation/modals/AdminLoginModal';
 import { BookingModal } from './presentation/modals/BookingModal';
 import { ClinicalRecordModal } from './presentation/modals/ClinicalRecordModal';
 import { ReviewModal } from './presentation/modals/ReviewModal';
+import { ErpLoginPage } from './presentation/pages/ErpLoginPage';
 
 export function App() {
   const { showToast } = useToast();
+  const [currentPath, setCurrentPath] = useState(
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [nurses, setNurses] = useState([]);
@@ -45,8 +49,22 @@ export function App() {
     const savedToken = localStorage.getItem('homecare_admin_token');
     if (savedToken) setIsAdminLoggedIn(true);
 
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+
     loadInitialData();
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const navigateTo = (path) => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', path);
+      setCurrentPath(path);
+      window.scrollTo(0, 0);
+    }
+  };
 
   const loadInitialData = async () => {
     try {
@@ -128,9 +146,9 @@ export function App() {
         setIsAdminLoggedIn(true);
         localStorage.setItem('homecare_admin_token', res.token);
         setIsAdminLoginOpen(false);
-        setIsAdminDashboardOpen(true);
-        showToast('¡Bienvenido Administrador! Abriendo Dashboard.', 'success');
+        showToast('¡Bienvenido! Accediendo al módulo Salud Kawsay ERP.', 'success');
         loadAdminStats();
+        navigateTo('/erp');
       } else {
         showToast(res.error || 'Credenciales inválidas.', 'error');
       }
@@ -144,6 +162,7 @@ export function App() {
     setIsAdminDashboardOpen(false);
     localStorage.removeItem('homecare_admin_token');
     showToast('Sesión administrativa finalizada.', 'info');
+    navigateTo('/');
   };
 
   const handleVerifyCedula = async (cedula) => {
@@ -401,13 +420,60 @@ export function App() {
     setIsBookingOpen(true);
   };
 
+  const isErpRoute = currentPath.startsWith('/erp') || currentPath.startsWith('/login');
+
+  if (isErpRoute) {
+    return (
+      <div className="homecare-app">
+        {!isAdminLoggedIn ? (
+          <ErpLoginPage
+            onLogin={handleAdminLogin}
+            onBackToWeb={() => navigateTo('/')}
+          />
+        ) : (
+          <AdminDashboardModal 
+            isOpen={true} 
+            onClose={() => navigateTo('/')} 
+            stats={stats} 
+            patients={patients} 
+            bookings={bookings} 
+            alerts={alerts} 
+            nurses={nurses}
+            checkins={checkins}
+            medications={medications}
+            prescriptions={prescriptions}
+            specialtyDataMap={specialtyDataMap}
+            onLogoutAdmin={handleAdminLogout} 
+            onOpenClinicalRecord={handleOpenClinicalRecord} 
+            onResolveAlert={handleResolveAlert} 
+            onUpdateBookingStatus={handleUpdateBookingStatus} 
+            onCreateNurse={handleCreateNurse}
+            onAssignNurse={handleAssignNurse}
+            onUpdateFinancials={handleUpdateFinancials}
+            onRegisterCheckin={handleRegisterCheckin}
+            onCreateMedication={handleCreateMedication}
+            onAdministerMedication={handleAdministerMedication}
+            onLoadSpecialtyData={handleLoadSpecialtyData}
+            onSaveSpecialtyData={handleSaveSpecialtyData}
+            onCreatePrescription={handleCreatePrescription}
+          />
+        )}
+
+        <ClinicalRecordModal 
+          isOpen={isClinicalRecordOpen} 
+          onClose={() => setIsClinicalRecordOpen(false)} 
+          selectedPatient={patientData} 
+          onSubmitRecord={handleSaveClinicalRecord} 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="homecare-app">
       <Navbar 
         onOpenBooking={openBooking} 
-        onOpenAdminClick={handleAdminHeaderClick} 
-        isAdminLoggedIn={isAdminLoggedIn} 
-        onLogoutAdmin={handleAdminLogout}
+        onNavigateErp={() => navigateTo('/erp')}
       />
 
       <Hero onOpenBooking={openBooking} />
@@ -454,41 +520,7 @@ export function App() {
         </div>
       </footer>
 
-      {/* Fullscreen Admin Dashboard Modal */}
-      <AdminDashboardModal 
-        isOpen={isAdminDashboardOpen} 
-        onClose={() => setIsAdminDashboardOpen(false)} 
-        stats={stats} 
-        patients={patients} 
-        bookings={bookings} 
-        alerts={alerts} 
-        nurses={nurses}
-        checkins={checkins}
-        medications={medications}
-        prescriptions={prescriptions}
-        specialtyDataMap={specialtyDataMap}
-        onLogoutAdmin={handleAdminLogout} 
-        onOpenClinicalRecord={handleOpenClinicalRecord} 
-        onResolveAlert={handleResolveAlert} 
-        onUpdateBookingStatus={handleUpdateBookingStatus} 
-        onCreateNurse={handleCreateNurse}
-        onAssignNurse={handleAssignNurse}
-        onUpdateFinancials={handleUpdateFinancials}
-        onRegisterCheckin={handleRegisterCheckin}
-        onCreateMedication={handleCreateMedication}
-        onAdministerMedication={handleAdministerMedication}
-        onLoadSpecialtyData={handleLoadSpecialtyData}
-        onSaveSpecialtyData={handleSaveSpecialtyData}
-        onCreatePrescription={handleCreatePrescription}
-      />
-
-      {/* Modals */}
-      <AdminLoginModal 
-        isOpen={isAdminLoginOpen} 
-        onClose={() => setIsAdminLoginOpen(false)} 
-        onLogin={handleAdminLogin} 
-      />
-
+      {/* Modals Públicos */}
       <BookingModal 
         isOpen={isBookingOpen} 
         onClose={() => setIsBookingOpen(false)} 
@@ -496,13 +528,6 @@ export function App() {
         defaultShift={bookingShift} 
         onVerifyCedula={handleVerifyCedula} 
         onSubmitBooking={handleCreateBooking} 
-      />
-
-      <ClinicalRecordModal 
-        isOpen={isClinicalRecordOpen} 
-        onClose={() => setIsClinicalRecordOpen(false)} 
-        selectedPatient={patientData} 
-        onSubmitRecord={handleSaveClinicalRecord} 
       />
 
       <ReviewModal 

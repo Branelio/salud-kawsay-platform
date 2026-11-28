@@ -31,7 +31,21 @@ export function AdminDashboardModal({
 }) {
   const [activeTab, setActiveTab] = useState('reservas');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false);
+  const [openGroups, setOpenGroups] = useState({ ops: true, clinical: true, talent: true });
   const [specialtySubTab, setSpecialtySubTab] = useState('odontologia');
+
+  const toggleGroup = (key) => {
+    setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleToggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 992) {
+      setSidebarOpen(prev => !prev);
+    } else {
+      setDesktopCollapsed(prev => !prev);
+    }
+  };
   const [specialtyPatientId, setSpecialtyPatientId] = useState('pat-1');
   
   // Dispatch filters & search
@@ -224,7 +238,7 @@ export function AdminDashboardModal({
       <div className={`erp-sidebar-backdrop ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
 
       {/* LEFT ENTERPRISE SIDEBAR */}
-      <aside className={`erp-sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside className={`erp-sidebar ${sidebarOpen ? 'open' : ''} ${desktopCollapsed ? 'desktop-collapsed' : ''}`}>
         <div>
           <div className="erp-brand">
             <div className="erp-brand-icon"><i className="fa-solid fa-heart-pulse"></i></div>
@@ -235,47 +249,68 @@ export function AdminDashboardModal({
           </div>
 
           <div className="erp-nav-group">
-            <div className="erp-nav-label">Operaciones</div>
-            <button type="button" className={`erp-nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => selectTab('reservas')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas</span>
-              <span className={`erp-nav-badge ${pendingAssignments > 0 ? 'danger' : ''}`}>
-                {pendingAssignments > 0 ? pendingAssignments : (bookings ? bookings.length : 0)}
-              </span>
+            <button type="button" className="erp-nav-group-btn" onClick={() => toggleGroup('ops')}>
+              <span>Operaciones</span>
+              <i className={`fa-solid ${openGroups.ops ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
             </button>
-            <button type="button" className={`erp-nav-item ${activeTab === 'evv' ? 'active' : ''}`} onClick={() => selectTab('evv')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-map-location-dot"></i> Control EVV (GPS)</span>
-              <span className="erp-nav-badge">{checkins ? checkins.length : 0}</span>
-            </button>
+            {openGroups.ops && (
+              <>
+                <button type="button" className={`erp-nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => selectTab('reservas')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas</span>
+                  <span className={`erp-nav-badge ${pendingAssignments > 0 ? 'danger' : ''}`}>
+                    {pendingAssignments > 0 ? pendingAssignments : (bookings ? bookings.length : 0)}
+                  </span>
+                </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'evv' ? 'active' : ''}`} onClick={() => selectTab('evv')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-map-location-dot"></i> Control EVV (GPS)</span>
+                  <span className="erp-nav-badge">{checkins ? checkins.length : 0}</span>
+                </button>
+              </>
+            )}
           </div>
 
           <div className="erp-nav-group">
-            <div className="erp-nav-label">Historia Clínica</div>
-            <button type="button" className={`erp-nav-item ${activeTab === 'especialidades' ? 'active' : ''}`} onClick={() => selectTab('especialidades')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-stethoscope"></i> Suite Clínica</span>
-              <span className="erp-nav-badge">3</span>
+            <button type="button" className="erp-nav-group-btn" onClick={() => toggleGroup('clinical')}>
+              <span>Historia Clínica</span>
+              <i className={`fa-solid ${openGroups.clinical ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
             </button>
-            <button type="button" className={`erp-nav-item ${activeTab === 'emar' ? 'active' : ''}`} onClick={() => selectTab('emar')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-pills"></i> Kardex / eMAR</span>
-              <span className="erp-nav-badge">{medications ? medications.length : 0}</span>
-            </button>
-            <button type="button" className={`erp-nav-item ${activeTab === 'clientes' ? 'active' : ''}`} onClick={() => selectTab('clientes')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-users"></i> Pacientes</span>
-              <span className="erp-nav-badge">{patients ? patients.length : 0}</span>
-            </button>
+            {openGroups.clinical && (
+              <>
+                <button type="button" className={`erp-nav-item ${activeTab === 'especialidades' ? 'active' : ''}`} onClick={() => selectTab('especialidades')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-stethoscope"></i> Suite Clínica</span>
+                  <span className="erp-nav-badge">3</span>
+                </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'emar' ? 'active' : ''}`} onClick={() => selectTab('emar')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-pills"></i> Kardex / eMAR</span>
+                  <span className="erp-nav-badge">{medications ? medications.length : 0}</span>
+                </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'clientes' ? 'active' : ''}`} onClick={() => selectTab('clientes')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-users"></i> Pacientes</span>
+                  <span className="erp-nav-badge">{patients ? patients.length : 0}</span>
+                </button>
+              </>
+            )}
           </div>
 
           <div className="erp-nav-group">
-            <div className="erp-nav-label">Talento & Monitoreo</div>
-            <button type="button" className={`erp-nav-item ${activeTab === 'enfermeras' ? 'active' : ''}`} onClick={() => selectTab('enfermeras')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-user-nurse"></i> Equipo y Nómina</span>
-              <span className="erp-nav-badge">{nurses ? nurses.length : 0}</span>
+            <button type="button" className="erp-nav-group-btn" onClick={() => toggleGroup('talent')}>
+              <span>Talento & Monitoreo</span>
+              <i className={`fa-solid ${openGroups.talent ? 'fa-chevron-down' : 'fa-chevron-right'}`}></i>
             </button>
-            <button type="button" className={`erp-nav-item ${activeTab === 'alertas' ? 'active' : ''}`} onClick={() => selectTab('alertas')}>
-              <span className="erp-nav-item-left"><i className="fa-solid fa-bell"></i> Alertas Médicas</span>
-              <span className={`erp-nav-badge ${activeAlertsCount > 0 ? 'danger' : ''}`}>
-                {activeAlertsCount}
-              </span>
-            </button>
+            {openGroups.talent && (
+              <>
+                <button type="button" className={`erp-nav-item ${activeTab === 'enfermeras' ? 'active' : ''}`} onClick={() => selectTab('enfermeras')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-user-nurse"></i> Equipo y Nómina</span>
+                  <span className="erp-nav-badge">{nurses ? nurses.length : 0}</span>
+                </button>
+                <button type="button" className={`erp-nav-item ${activeTab === 'alertas' ? 'active' : ''}`} onClick={() => selectTab('alertas')}>
+                  <span className="erp-nav-item-left"><i className="fa-solid fa-bell"></i> Alertas Médicas</span>
+                  <span className={`erp-nav-badge ${activeAlertsCount > 0 ? 'danger' : ''}`}>
+                    {activeAlertsCount}
+                  </span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -301,7 +336,7 @@ export function AdminDashboardModal({
       <main className="erp-main">
         <header className="erp-topbar">
           <div className="erp-topbar-left">
-            <button type="button" className="erp-sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label="Abrir menú ERP">
+            <button type="button" className="erp-sidebar-toggle" onClick={handleToggleSidebar} aria-label="Desplegar o contraer menú ERP">
               <i className="fa-solid fa-bars"></i>
             </button>
             <div>

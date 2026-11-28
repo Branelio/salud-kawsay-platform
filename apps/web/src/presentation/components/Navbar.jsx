@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export function Navbar({ onOpenBooking, onOpenAdminClick, isAdminLoggedIn, onLogoutAdmin }) {
+export function Navbar({ onOpenBooking, onNavigateErp }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLinkClick = () => {
@@ -42,29 +42,12 @@ export function Navbar({ onOpenBooking, onOpenAdminClick, isAdminLoggedIn, onLog
               <i className="fa-solid fa-headset"></i> 096 953 2186
             </a>
             
-            {isAdminLoggedIn ? (
-              <div className="admin-btn-group">
-                <button 
-                  className="btn-admin-header logged-in" 
-                  onClick={() => { setIsMobileMenuOpen(false); onOpenAdminClick(); }}
-                >
-                  <i className="fa-solid fa-chart-line"></i> Dashboard Admin
-                </button>
-                <button 
-                  className="btn-admin-logout" 
-                  onClick={() => { setIsMobileMenuOpen(false); onLogoutAdmin(); }}
-                >
-                  <i className="fa-solid fa-right-from-bracket"></i> Salir
-                </button>
-              </div>
-            ) : (
-              <button 
-                className="btn-admin-header" 
-                onClick={() => { setIsMobileMenuOpen(false); onOpenAdminClick(); }}
-              >
-                <i className="fa-solid fa-user"></i> Inicio de Sesión
-              </button>
-            )}
+            <button 
+              className="btn-admin-header" 
+              onClick={() => { setIsMobileMenuOpen(false); onNavigateErp(); }}
+            >
+              <i className="fa-solid fa-hospital-user"></i> Portal Clínico / ERP
+            </button>
 
             <button 
               className="btn-primary" 
@@ -81,32 +64,13 @@ export function Navbar({ onOpenBooking, onOpenAdminClick, isAdminLoggedIn, onLog
             <i className="fa-solid fa-headset"></i> 096 953 2186
           </a>
           
-          {isAdminLoggedIn ? (
-            <div className="admin-btn-group">
-              <button 
-                id="btn-admin-access" 
-                className="btn-admin-header logged-in" 
-                onClick={onOpenAdminClick}
-              >
-                <i className="fa-solid fa-chart-line"></i> Dashboard Admin
-              </button>
-              <button 
-                className="btn-admin-logout" 
-                onClick={onLogoutAdmin}
-                title="Cerrar Sesión Admin"
-              >
-                <i className="fa-solid fa-right-from-bracket"></i> Salir
-              </button>
-            </div>
-          ) : (
-            <button 
-              id="btn-admin-access" 
-              className="btn-admin-header" 
-              onClick={onOpenAdminClick}
-            >
-              <i className="fa-solid fa-user"></i> Inicio de Sesión
-            </button>
-          )}
+          <button 
+            id="btn-admin-access" 
+            className="btn-admin-header" 
+            onClick={onNavigateErp}
+          >
+            <i className="fa-solid fa-hospital-user"></i> Portal Clínico
+          </button>
 
           <button 
             id="btn-open-booking" 

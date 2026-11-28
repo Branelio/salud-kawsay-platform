@@ -2501,6 +2501,167 @@ button,
   overflow-y: auto;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 3020;
+  transition: width 0.25s ease, padding 0.25s ease, transform 0.25s ease;
+}
+
+.erp-sidebar.desktop-collapsed {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+.erp-nav-group-btn {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: transparent;
+  padding: 4px 12px 6px !important;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #6ee7b7;
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.erp-sidebar-toggle {
+  display: inline-flex !important;
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* ========================================================
+   STANDALONE ERP LOGIN PAGE (/erp & /login)
+   ======================================================== */
+.erp-login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  background: #f8fafc;
+}
+
+.erp-login-showcase {
+  background: linear-gradient(155deg, #064e3b 0%, #022c22 65%, #0c4a6e 100%);
+  color: #ffffff;
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.erp-login-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.erp-login-hero h1 {
+  font-size: 36px;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  color: #ffffff;
+}
+
+.erp-login-hero p {
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: #d1fae5;
+  margin-bottom: 24px;
+  max-width: 520px;
+}
+
+.erp-login-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 14.5px;
+  color: #ecfdf5;
+}
+
+.erp-login-features li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.erp-login-features i {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(16, 185, 129, 0.22);
+  color: #6ee7b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.erp-login-footer-note {
+  font-size: 12.5px;
+  color: #a7f3d0;
+  opacity: 0.85;
+}
+
+.erp-login-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.erp-login-card {
+  width: 100%;
+  max-width: 430px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+.erp-back-link {
+  background: transparent !important;
+  color: #0284c7;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 !important;
+  margin-bottom: 20px;
+}
+
+.erp-login-card-header h2 {
+  font-size: 24px;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.erp-login-card-header p {
+  font-size: 13.5px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .erp-login-page {
+    grid-template-columns: 1fr;
+  }
+  .erp-login-showcase {
+    padding: 28px 24px;
+    gap: 24px;
+  }
+  .erp-login-hero h1 {
+    font-size: 24px;
+  }
 }
 
 .erp-brand {
@@ -2664,7 +2825,7 @@ button,
 }
 
 .erp-sidebar-toggle {
-  display: none !important;
+  display: inline-flex !important;
   background: #f1f5f9;
   color: #0f172a;
   border: 1px solid #cbd5e1;
