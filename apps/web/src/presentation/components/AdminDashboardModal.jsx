@@ -30,6 +30,7 @@ export function AdminDashboardModal({
   onCreatePrescription
 }) {
   const [activeTab, setActiveTab] = useState('reservas');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [specialtySubTab, setSpecialtySubTab] = useState('odontologia');
   const [specialtyPatientId, setSpecialtyPatientId] = useState('pat-1');
   
@@ -200,122 +201,177 @@ export function AdminDashboardModal({
     emarPatientFilter === 'all' || m.patientId === emarPatientFilter
   );
 
+  const TAB_META = {
+    reservas: { title: 'Despacho Operativo & Finanzas', sub: 'Asignación de guardias, Unit Economics y reporte contable CSV' },
+    evv: { title: 'Control de Asistencia GPS (EVV)', sub: 'Auditoría de Check-in / Check-out en domicilio con aviso por WhatsApp' },
+    especialidades: { title: 'Suite Clínica Multi-Especialidad', sub: 'Odontograma FDI, Control Pediátrico MSP y Recetario Digital CIE-10' },
+    emar: { title: 'Kardex Digital & eMAR', sub: 'Control de medicación programada y confirmación de dosis en tiempo real' },
+    clientes: { title: 'Directorio de Pacientes', sub: 'Expedientes médicos unificados por Cédula de Identidad' },
+    enfermeras: { title: 'Equipo de Salud & Nómina MSP', sub: 'Credenciales SENESCYT/MSP, disponibilidad y honorarios por liquidar' },
+    alertas: { title: 'Monitor de Alertas Clínicas', sub: 'Triage en vivo de signos vitales críticos y advertencias' }
+  };
+
+  const currentMeta = TAB_META[activeTab] || TAB_META.reservas;
+  const activeAlertsCount = (alerts || []).filter(a => !a.resolved).length;
+
+  const selectTab = (tab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
+
   return (
-    <div className="admin-fullscreen-modal">
-      <div className="admin-dashboard-header">
-        <h2>
-          <i className="fa-solid fa-hospital"></i> Salud Kawsay ERP — Operaciones Clínicas y Finanzas
-        </h2>
-        <div className="admin-header-right">
-          <span className="admin-user-pill">
-            <i className="fa-solid fa-user-shield"></i> Admin General
-          </span>
-          <button className="btn-secondary-sm" onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>
-            <i className="fa-solid fa-notes-medical"></i> Crear/Editar Ficha Clínica
-          </button>
-          <button className="btn-logout-sm" onClick={onLogoutAdmin}>
-            <i className="fa-solid fa-sign-out-alt"></i> Salir
-          </button>
-          <button className="btn-close-dash" onClick={onClose}>
-            <i className="fa-solid fa-xmark"></i> Volver a la Web
-          </button>
-        </div>
-      </div>
+    <div className="erp-shell">
+      <div className={`erp-sidebar-backdrop ${sidebarOpen ? 'open' : ''}`} onClick={() => setSidebarOpen(false)} />
 
-      <div className="admin-dashboard-body">
-        {/* Metric Cards - ERP Unit Economics & Operations */}
-        <div className="admin-metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
-          <div className="admin-metric-card revenue">
-            <i className="fa-solid fa-hand-holding-dollar" style={{ color: '#0284c7' }}></i>
+      {/* LEFT ENTERPRISE SIDEBAR */}
+      <aside className={`erp-sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div>
+          <div className="erp-brand">
+            <div className="erp-brand-icon"><i className="fa-solid fa-heart-pulse"></i></div>
             <div>
-              <h4 style={{ color: '#0369a1' }}>${revenue.toFixed(2)} USD</h4>
-              <span>Facturación Bruta (Clientes)</span>
+              <div className="erp-brand-title">SALUD KAWSAY</div>
+              <div className="erp-brand-sub">ERP Clínico & Finanzas</div>
             </div>
           </div>
 
-          <div className="admin-metric-card" style={{ borderColor: '#fed7aa' }}>
-            <i className="fa-solid fa-user-nurse" style={{ color: '#ea580c' }}></i>
-            <div>
-              <h4 style={{ color: '#c2410c' }}>${nursePayout.toFixed(2)} USD</h4>
-              <span>Nómina / Liquidación Enfermeras</span>
-            </div>
-          </div>
-
-          <div className="admin-metric-card" style={{ borderColor: '#86efac', background: '#f0fdf4' }}>
-            <i className="fa-solid fa-chart-line" style={{ color: '#059669' }}></i>
-            <div>
-              <h4 style={{ color: '#047857' }}>${netMargin.toFixed(2)} USD</h4>
-              <span>Margen Neto Agencia ({marginPct}%)</span>
-            </div>
-          </div>
-
-          <div className="admin-metric-card alerts" style={{ borderColor: pendingAssignments > 0 ? '#fca5a5' : '#a7f3d0' }}>
-            <i className={pendingAssignments > 0 ? "fa-solid fa-clipboard-user" : "fa-solid fa-circle-check"} style={{ color: pendingAssignments > 0 ? '#dc2626' : '#10b981' }}></i>
-            <div>
-              <h4 style={{ color: pendingAssignments > 0 ? '#b91c1c' : '#047857' }}>{pendingAssignments}</h4>
-              <span>{pendingAssignments > 0 ? 'Guardias por Despachar' : 'Despacho al 100%'}</span>
-            </div>
-          </div>
-
-          <div className="admin-metric-card">
-            <i className="fa-solid fa-location-dot" style={{ color: '#0284c7' }}></i>
-            <div>
-              <h4>{checkins ? checkins.length : 0}</h4>
-              <span>Visitas Verificadas (EVV)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="admin-tabs-nav">
-          <button 
-            className={`tab-btn ${activeTab === 'reservas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reservas')}
-          >
-            <i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas ({bookings ? bookings.length : 0})
-            {pendingAssignments > 0 && (
-              <span style={{ background: '#ef4444', color: '#fff', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', marginLeft: '6px' }}>
-                {pendingAssignments} sin asignar
+          <div className="erp-nav-group">
+            <div className="erp-nav-label">Operaciones</div>
+            <button type="button" className={`erp-nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => selectTab('reservas')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas</span>
+              <span className={`erp-nav-badge ${pendingAssignments > 0 ? 'danger' : ''}`}>
+                {pendingAssignments > 0 ? pendingAssignments : (bookings ? bookings.length : 0)}
               </span>
-            )}
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'evv' ? 'active' : ''}`}
-            onClick={() => setActiveTab('evv')}
-          >
-            <i className="fa-solid fa-map-location-dot"></i> Control EVV ({checkins ? checkins.length : 0})
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'emar' ? 'active' : ''}`}
-            onClick={() => setActiveTab('emar')}
-          >
-            <i className="fa-solid fa-pills"></i> Kardex / eMAR ({medications ? medications.length : 0})
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'especialidades' ? 'active' : ''}`}
-            onClick={() => setActiveTab('especialidades')}
-          >
-            <i className="fa-solid fa-stethoscope"></i> Suite Clínica (Odonto / Pediatría / Rx)
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'enfermeras' ? 'active' : ''}`}
-            onClick={() => setActiveTab('enfermeras')}
-          >
-            <i className="fa-solid fa-user-nurse"></i> Equipo y Nómina ({nurses ? nurses.length : 0})
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'clientes' ? 'active' : ''}`}
-            onClick={() => setActiveTab('clientes')}
-          >
-            <i className="fa-solid fa-users"></i> Pacientes ({patients ? patients.length : 0})
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'alertas' ? 'active' : ''}`}
-            onClick={() => setActiveTab('alertas')}
-          >
-            <i className="fa-solid fa-bell"></i> Alertas ({alerts ? alerts.length : 0})
-          </button>
+            </button>
+            <button type="button" className={`erp-nav-item ${activeTab === 'evv' ? 'active' : ''}`} onClick={() => selectTab('evv')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-map-location-dot"></i> Control EVV (GPS)</span>
+              <span className="erp-nav-badge">{checkins ? checkins.length : 0}</span>
+            </button>
+          </div>
+
+          <div className="erp-nav-group">
+            <div className="erp-nav-label">Historia Clínica</div>
+            <button type="button" className={`erp-nav-item ${activeTab === 'especialidades' ? 'active' : ''}`} onClick={() => selectTab('especialidades')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-stethoscope"></i> Suite Clínica</span>
+              <span className="erp-nav-badge">3</span>
+            </button>
+            <button type="button" className={`erp-nav-item ${activeTab === 'emar' ? 'active' : ''}`} onClick={() => selectTab('emar')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-pills"></i> Kardex / eMAR</span>
+              <span className="erp-nav-badge">{medications ? medications.length : 0}</span>
+            </button>
+            <button type="button" className={`erp-nav-item ${activeTab === 'clientes' ? 'active' : ''}`} onClick={() => selectTab('clientes')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-users"></i> Pacientes</span>
+              <span className="erp-nav-badge">{patients ? patients.length : 0}</span>
+            </button>
+          </div>
+
+          <div className="erp-nav-group">
+            <div className="erp-nav-label">Talento & Monitoreo</div>
+            <button type="button" className={`erp-nav-item ${activeTab === 'enfermeras' ? 'active' : ''}`} onClick={() => selectTab('enfermeras')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-user-nurse"></i> Equipo y Nómina</span>
+              <span className="erp-nav-badge">{nurses ? nurses.length : 0}</span>
+            </button>
+            <button type="button" className={`erp-nav-item ${activeTab === 'alertas' ? 'active' : ''}`} onClick={() => selectTab('alertas')}>
+              <span className="erp-nav-item-left"><i className="fa-solid fa-bell"></i> Alertas Médicas</span>
+              <span className={`erp-nav-badge ${activeAlertsCount > 0 ? 'danger' : ''}`}>
+                {activeAlertsCount}
+              </span>
+            </button>
+          </div>
         </div>
+
+        <div className="erp-sidebar-footer">
+          <div style={{ fontSize: '12px', color: '#a7f3d0', padding: '0 6px 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <i className="fa-solid fa-user-shield"></i> Sesión: <strong>Admin General</strong>
+          </div>
+          <button type="button" className="btn-secondary-sm" style={{ width: '100%', background: '#0284c7', color: '#fff' }} onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>
+            <i className="fa-solid fa-notes-medical"></i> + Ficha Clínica
+          </button>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button type="button" className="btn-logout-sm" style={{ flex: 1 }} onClick={onLogoutAdmin}>
+              <i className="fa-solid fa-sign-out-alt"></i> Salir
+            </button>
+            <button type="button" className="btn-close-dash" style={{ flex: 1 }} onClick={onClose}>
+              <i className="fa-solid fa-globe"></i> Web
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* RIGHT WORKSPACE */}
+      <main className="erp-main">
+        <header className="erp-topbar">
+          <div className="erp-topbar-left">
+            <button type="button" className="erp-sidebar-toggle" onClick={() => setSidebarOpen(true)} aria-label="Abrir menú ERP">
+              <i className="fa-solid fa-bars"></i>
+            </button>
+            <div>
+              <h2>{currentMeta.title}</h2>
+              <p>{currentMeta.sub}</p>
+            </div>
+          </div>
+          <div className="erp-topbar-actions">
+            <button type="button" className="btn-secondary-sm" style={{ background: '#059669', color: '#fff' }} onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>
+              <i className="fa-solid fa-plus"></i> Crear/Editar Ficha Clínica
+            </button>
+            <button type="button" className="btn-close-dash" onClick={onClose}>
+              <i className="fa-solid fa-xmark"></i> Volver a la Web
+            </button>
+          </div>
+        </header>
+
+        <div className="erp-workspace">
+          {/* Elevated KPI Strip */}
+          <div className="erp-kpi-grid">
+            <div className="erp-kpi-card">
+              <div className="erp-kpi-icon" style={{ background: '#e0f2fe', color: '#0284c7' }}>
+                <i className="fa-solid fa-hand-holding-dollar"></i>
+              </div>
+              <div>
+                <div className="erp-kpi-val" style={{ color: '#0369a1' }}>${revenue.toFixed(2)} USD</div>
+                <div className="erp-kpi-label">Facturación Bruta (Clientes)</div>
+              </div>
+            </div>
+
+            <div className="erp-kpi-card">
+              <div className="erp-kpi-icon" style={{ background: '#ffedd5', color: '#ea580c' }}>
+                <i className="fa-solid fa-user-nurse"></i>
+              </div>
+              <div>
+                <div className="erp-kpi-val" style={{ color: '#c2410c' }}>${nursePayout.toFixed(2)} USD</div>
+                <div className="erp-kpi-label">Nómina / Liquidación Personal</div>
+              </div>
+            </div>
+
+            <div className="erp-kpi-card">
+              <div className="erp-kpi-icon" style={{ background: '#dcfce7', color: '#059669' }}>
+                <i className="fa-solid fa-chart-line"></i>
+              </div>
+              <div>
+                <div className="erp-kpi-val" style={{ color: '#047857' }}>${netMargin.toFixed(2)} USD</div>
+                <div className="erp-kpi-label">Margen Neto Agencia ({marginPct}%)</div>
+              </div>
+            </div>
+
+            <div className="erp-kpi-card">
+              <div className="erp-kpi-icon" style={{ background: pendingAssignments > 0 ? '#fee2e2' : '#d1fae5', color: pendingAssignments > 0 ? '#dc2626' : '#059669' }}>
+                <i className={pendingAssignments > 0 ? 'fa-solid fa-clipboard-user' : 'fa-solid fa-circle-check'}></i>
+              </div>
+              <div>
+                <div className="erp-kpi-val" style={{ color: pendingAssignments > 0 ? '#b91c1c' : '#047857' }}>{pendingAssignments}</div>
+                <div className="erp-kpi-label">{pendingAssignments > 0 ? 'Guardias por Despachar' : 'Despacho al 100%'}</div>
+              </div>
+            </div>
+
+            <div className="erp-kpi-card">
+              <div className="erp-kpi-icon" style={{ background: '#e0e7ff', color: '#4f46e5' }}>
+                <i className="fa-solid fa-location-dot"></i>
+              </div>
+              <div>
+                <div className="erp-kpi-val" style={{ color: '#3730a3' }}>{checkins ? checkins.length : 0}</div>
+                <div className="erp-kpi-label">Visitas Verificadas (EVV)</div>
+              </div>
+            </div>
+          </div>
 
         {/* TAB 1: DESPACHO & UNIT ECONOMICS */}
         {activeTab === 'reservas' && (
@@ -1058,7 +1114,8 @@ export function AdminDashboardModal({
             })()}
           </div>
         )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
