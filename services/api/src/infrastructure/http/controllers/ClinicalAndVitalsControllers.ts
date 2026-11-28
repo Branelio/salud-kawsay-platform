@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { IClinicalRecordRepository, IVitalSignsRepository, IAlertRepository, IMedicationRepository } from '../../../domain/ports/repositories';
+import { IClinicalRecordRepository, IVitalSignsRepository, IAlertRepository, IMedicationRepository, ISpecialtyClinicalRepository } from '../../../domain/ports/repositories';
 import { MedicationOrder } from '../../../domain/entities/MedicationOrder';
+import { MedicalPrescription } from '../../../domain/entities/SpecialtyClinical';
 import { SaveClinicalRecordUseCase } from '../../../application/use-cases/SaveClinicalRecordUseCase';
 import { RegisterVitalSignsUseCase } from '../../../application/use-cases/RegisterVitalSignsUseCase';
 import { ResolveAlertUseCase } from '../../../application/use-cases/ResolveAlertUseCase';
@@ -163,6 +164,55 @@ export class MedicationsController {
       } else {
         res.status(404).json({ success: false, error: 'Orden de medicación no encontrada' });
       }
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+}
+
+export class SpecialtyClinicalController {
+  constructor(private specialtyRepo: ISpecialtyClinicalRepository) {}
+
+  getPrescriptions = async (_req: Request, res: Response) => {
+    try {
+      const list = await this.specialtyRepo.getPrescriptions();
+      res.json({ success: true, data: list });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  };
+
+  createPrescription = async (req: Request, res: Response) => {
+    try {
+      const rx = new MedicalPrescription({
+        id: `rx-${Math.floor(1000 + Math.random() * 9000)}`,
+        ...req.body
+      });
+      const saved = await this.specialtyRepo.savePrescription(rx);
+      res.status(201).json({ success: true, message: 'Receta médica emitida exitosamente', data: saved });
+    } catch (err: any) {
+      res.status(400).json({ success: false, error: err.message });
+    }
+  };
+
+  getSpecialtyByPatient = async (req: Request, res: Response) => {
+    try {
+      const data = await this.specialtyRepo.getSpecialtyByPatientId(req.params.patientId);
+      res.json({ success: true, data });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  };
+
+  saveSpecialty = async (req: Request, res: Response) => {
+    try {
+      const current = await this.specialtyRepo.getSpecialtyByPatientId(req.params.patientId);
+      const updated = await this.specialtyRepo.saveSpecialtyData({
+        ...current,
+        ...req.body,
+        patientId: req.params.patientId
+      });
+      res.json({ success: true, message: 'Ficha de especialidad guardada', data: updated });
     } catch (err: any) {
       res.status(400).json({ success: false, error: err.message });
     }

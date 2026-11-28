@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { OdontogramPanel } from './erp/OdontogramPanel';
+import { PediatricsPanel } from './erp/PediatricsPanel';
+import { PrescriptionPanel } from './erp/PrescriptionPanel';
 
 export function AdminDashboardModal({ 
   isOpen, 
@@ -10,6 +13,8 @@ export function AdminDashboardModal({
   nurses,
   checkins,
   medications,
+  prescriptions,
+  specialtyDataMap,
   onLogoutAdmin, 
   onOpenClinicalRecord, 
   onResolveAlert, 
@@ -19,9 +24,14 @@ export function AdminDashboardModal({
   onUpdateFinancials,
   onRegisterCheckin,
   onCreateMedication,
-  onAdministerMedication
+  onAdministerMedication,
+  onLoadSpecialtyData,
+  onSaveSpecialtyData,
+  onCreatePrescription
 }) {
   const [activeTab, setActiveTab] = useState('reservas');
+  const [specialtySubTab, setSpecialtySubTab] = useState('odontologia');
+  const [specialtyPatientId, setSpecialtyPatientId] = useState('pat-1');
   
   // Dispatch filters & search
   const [bookingSearch, setBookingSearch] = useState('');
@@ -51,6 +61,12 @@ export function AdminDashboardModal({
   const [medRoute, setMedRoute] = useState('Oral');
   const [medSchedule, setMedSchedule] = useState('Cada 12h (08:00 - 20:00)');
   const [medDoctor, setMedDoctor] = useState('');
+
+  useEffect(() => {
+    if (isOpen && activeTab === 'especialidades' && specialtyPatientId && onLoadSpecialtyData) {
+      onLoadSpecialtyData(specialtyPatientId);
+    }
+  }, [isOpen, activeTab, specialtyPatientId]);
 
   if (!isOpen) return null;
 
@@ -274,6 +290,12 @@ export function AdminDashboardModal({
             onClick={() => setActiveTab('emar')}
           >
             <i className="fa-solid fa-pills"></i> Kardex / eMAR ({medications ? medications.length : 0})
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'especialidades' ? 'active' : ''}`}
+            onClick={() => setActiveTab('especialidades')}
+          >
+            <i className="fa-solid fa-stethoscope"></i> Suite Clínica (Odonto / Pediatría / Rx)
           </button>
           <button 
             className={`tab-btn ${activeTab === 'enfermeras' ? 'active' : ''}`}
@@ -907,7 +929,7 @@ export function AdminDashboardModal({
         {/* TAB 6: ALERTAS MÉDICAS */}
         {activeTab === 'alertas' && (
           <div className="admin-table-card">
-            <h3><i className="fa-solid fa-bell"></i> Monitor de Alertas Médicas en Vivo</h3>
+            <h3><span><i className="fa-solid fa-bell"></i> Monitor de Alertas Médicas en Vivo</span></h3>
             <div className="table-responsive">
               <table className="admin-table">
                 <thead>
@@ -950,6 +972,90 @@ export function AdminDashboardModal({
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* TAB 7: SUITE CLÍNICA MULTI-ESPECIALIDAD (ODONTOLOGÍA, PEDIATRÍA, RECETARIO CIE-10) */}
+        {activeTab === 'especialidades' && (
+          <div className="admin-table-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '18px', color: '#064e3b' }}>
+                  <span><i className="fa-solid fa-stethoscope"></i> Suite Clínica Multi-Especialidad</span>
+                </h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
+                  Módulos especializados para Odontólogos, Pediatras y Médicos con diagnóstico CIE-10 e impresión formal.
+                </p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#064e3b' }}>Paciente Activo:</label>
+                <select
+                  value={specialtyPatientId}
+                  onChange={(e) => setSpecialtyPatientId(e.target.value)}
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #059669', fontSize: '13px', fontWeight: 600 }}
+                >
+                  {(patients || []).map(p => (
+                    <option key={p.id} value={p.id}>{p.fullName} (CI: {p.cedula})</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="specialty-subtabs">
+              <button
+                type="button"
+                className={`subtab-btn ${specialtySubTab === 'odontologia' ? 'active' : ''}`}
+                onClick={() => setSpecialtySubTab('odontologia')}
+              >
+                <i className="fa-solid fa-tooth"></i> Odontograma Digital
+              </button>
+              <button
+                type="button"
+                className={`subtab-btn ${specialtySubTab === 'pediatria' ? 'active' : ''}`}
+                onClick={() => setSpecialtySubTab('pediatria')}
+              >
+                <i className="fa-solid fa-baby"></i> Pediatría & Vacunas MSP
+              </button>
+              <button
+                type="button"
+                className={`subtab-btn ${specialtySubTab === 'recetario' ? 'active' : ''}`}
+                onClick={() => setSpecialtySubTab('recetario')}
+              >
+                <i className="fa-solid fa-file-prescription"></i> Recetario Digital CIE-10 ({prescriptions ? prescriptions.length : 0})
+              </button>
+            </div>
+
+            {(() => {
+              const activePatient = (patients || []).find(p => p.id === specialtyPatientId) || (patients && patients[0]);
+              const specData = (specialtyDataMap && activePatient) ? specialtyDataMap[activePatient.id] : null;
+              if (!activePatient) return <p style={{ color: '#64748b' }}>Registrá un paciente para abrir la suite clínica.</p>;
+
+              if (specialtySubTab === 'odontologia') {
+                return (
+                  <OdontogramPanel
+                    patient={activePatient}
+                    specialtyData={specData}
+                    onSaveSpecialty={onSaveSpecialtyData}
+                  />
+                );
+              }
+              if (specialtySubTab === 'pediatria') {
+                return (
+                  <PediatricsPanel
+                    patient={activePatient}
+                    specialtyData={specData}
+                    onSaveSpecialty={onSaveSpecialtyData}
+                  />
+                );
+              }
+              return (
+                <PrescriptionPanel
+                  patient={activePatient}
+                  prescriptions={prescriptions}
+                  onCreatePrescription={onCreatePrescription}
+                />
+              );
+            })()}
           </div>
         )}
       </div>

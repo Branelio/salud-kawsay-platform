@@ -29,6 +29,8 @@ export function App() {
   const [waLogs, setWaLogs] = useState([]);
   const [checkins, setCheckins] = useState([]);
   const [medications, setMedications] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [specialtyDataMap, setSpecialtyDataMap] = useState({});
 
   // Modals state
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
@@ -94,6 +96,9 @@ export function App() {
 
       const medsRes = await ApiClientAdapter.getMedications();
       if (medsRes.success) setMedications(medsRes.data);
+
+      const rxRes = await ApiClientAdapter.getPrescriptions();
+      if (rxRes.success) setPrescriptions(rxRes.data);
     } catch (err) {
       console.error(err);
     }
@@ -340,6 +345,45 @@ export function App() {
     }
   };
 
+  const handleLoadSpecialtyData = async (patientId) => {
+    try {
+      const res = await ApiClientAdapter.getSpecialtyData(patientId);
+      if (res.success) {
+        setSpecialtyDataMap(prev => ({ ...prev, [patientId]: res.data }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveSpecialtyData = async (patientId, payload) => {
+    try {
+      const res = await ApiClientAdapter.saveSpecialtyData(patientId, payload);
+      if (res.success) {
+        setSpecialtyDataMap(prev => ({ ...prev, [patientId]: res.data }));
+        showToast('Ficha de especialidad guardada correctamente.', 'success');
+      } else {
+        showToast(res.error || 'Error guardando ficha de especialidad.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con la API de especialidad.', 'error');
+    }
+  };
+
+  const handleCreatePrescription = async (rxPayload) => {
+    try {
+      const res = await ApiClientAdapter.createPrescription(rxPayload);
+      if (res.success) {
+        showToast(`Receta #${res.data.id} emitida con diagnóstico ${res.data.cie10Code}.`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error emitiendo receta.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con la API de recetario.', 'error');
+    }
+  };
+
   const handleSendWaSimMessage = async (message) => {
     try {
       const res = await ApiClientAdapter.sendWaWebhook('0998765432', message);
@@ -421,6 +465,8 @@ export function App() {
         nurses={nurses}
         checkins={checkins}
         medications={medications}
+        prescriptions={prescriptions}
+        specialtyDataMap={specialtyDataMap}
         onLogoutAdmin={handleAdminLogout} 
         onOpenClinicalRecord={handleOpenClinicalRecord} 
         onResolveAlert={handleResolveAlert} 
@@ -431,6 +477,9 @@ export function App() {
         onRegisterCheckin={handleRegisterCheckin}
         onCreateMedication={handleCreateMedication}
         onAdministerMedication={handleAdministerMedication}
+        onLoadSpecialtyData={handleLoadSpecialtyData}
+        onSaveSpecialtyData={handleSaveSpecialtyData}
+        onCreatePrescription={handleCreatePrescription}
       />
 
       {/* Modals */}

@@ -10,6 +10,7 @@ import { MedicalAlert } from '../../domain/entities/MedicalAlert';
 import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
 import { MedicationOrder } from '../../domain/entities/MedicationOrder';
+import { MedicalPrescription, PatientSpecialtyData } from '../../domain/entities/SpecialtyClinical';
 
 const DATA_DIR = path.join(__dirname, '../../../data');
 const DATA_FILE = path.join(DATA_DIR, 'database.json');
@@ -27,6 +28,8 @@ export class JsonStorage {
   public clinicalRecords: ClinicalRecord[] = [];
   public checkins: NurseCheckin[] = [];
   public medications: MedicationOrder[] = [];
+  public prescriptions: MedicalPrescription[] = [];
+  public specialtyRecords: Record<string, PatientSpecialtyData> = {};
 
   private constructor() {
     this.init();
@@ -58,6 +61,8 @@ export class JsonStorage {
         this.clinicalRecords = (data.clinicalRecords || []).map((c: any) => new ClinicalRecord(c));
         this.checkins = (data.checkins || []).map((k: any) => new NurseCheckin(k));
         this.medications = (data.medications || []).map((m: any) => new MedicationOrder(m));
+        this.prescriptions = (data.prescriptions || []).map((p: any) => new MedicalPrescription(p));
+        this.specialtyRecords = data.specialtyRecords || {};
         if (this.medications.length === 0) {
           this.seedDefaultMedications();
         }
@@ -122,7 +127,9 @@ export class JsonStorage {
         alerts: this.alerts,
         clinicalRecords: this.clinicalRecords,
         checkins: this.checkins,
-        medications: this.medications
+        medications: this.medications,
+        prescriptions: this.prescriptions,
+        specialtyRecords: this.specialtyRecords
       };
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
     } catch (err: any) {

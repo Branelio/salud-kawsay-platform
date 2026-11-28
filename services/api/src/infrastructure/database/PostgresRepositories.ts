@@ -9,6 +9,7 @@ import { MedicalAlert } from '../../domain/entities/MedicalAlert';
 import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
 import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
+import { MedicalPrescription, PatientSpecialtyData, createDefaultSpecialtyData } from '../../domain/entities/SpecialtyClinical';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -18,7 +19,8 @@ import {
   IAlertRepository,
   IReviewRepository,
   IMessagingService,
-  IMedicationRepository
+  IMedicationRepository,
+  ISpecialtyClinicalRepository
 } from '../../domain/ports/repositories';
 
 function mapPatient(r: any): Patient {
@@ -458,5 +460,66 @@ export class PostgresMedicationRepository implements IMedicationRepository {
       [id, order.lastAdministeredAt || null, order.lastAdministeredBy || null, JSON.stringify(order.administrationLogs)]
     );
     return order;
+  }
+}
+
+export class PostgresSpecialtyClinicalRepository implements ISpecialtyClinicalRepository {
+  async getPrescriptions(): Promise<MedicalPrescription[]> {
+    const res = await pgQuery('SELECT * FROM prescriptions ORDER BY created_at DESC');
+    return res.rows.map(r => new MedicalPrescription({
+      id: r.id,
+      patientId: r.patient_id,
+      patientName: r.patient_name,
+      patientCedula: r.patient_cedula,
+      specialty: r.specialty,
+      cie10Code: r.cie10_code,
+      cie10Description: r.cie10_description,
+      items: Array.isArray(r.items) ? r.items : [],
+      indications: r.indications,
+      doctorName: r.doctor_name,
+      doctorLicense: r.doctor_license,
+      createdAt: r.created_at
+    }));
+  }
+
+  async savePrescription(rx: MedicalPrescription): Promise<MedicalPrescription> {
+    await pgQuery(
+      `INSERT INTO prescriptions (id, patient_id, patient_name, patient_cedula, specialty, cie10_code, cie10_description, items, indications, doctor_name, doctor_license, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10,$11,$12)`,
+      [rx.id, rx.patientId, rx.patientName, rx.patientCedula, rx.specialty, rx.cie10Code, rx.cie10Description, JSON.stringify(rx.items), rx.indications, rx.doctorName, rx.doctorLicense, rx.createdAt]
+    );
+    return rx;
+  }
+
+  async getSpecialtyByPatientId(patientId: string): Promise<PatientSpecialtyData> {
+    const res = await pgQuery('SELECT * FROM specialty_records WHERE patient_id = $1', [patientId]);
+    const r = res.rows[0];
+    if (!r) return createDefaultSpecialtyData(patientId);
+    const defaults = createDefaultSpecialtyData(patientId);
+    return {
+      patientId: r.patient_id,
+      odontogram: r.odontogram || {},
+      dentalTreatmentPlan: r.dental_treatment_plan || '',
+      pediatrics: {
+        ...defaults.pediatrics,
+        ...(r.pediatrics || {})
+      },
+      updatedAt: r.updated_at
+    };
+  }
+
+  async saveSpecialtyData(data: PatientSpecialtyData): Promise<PatientSpecialtyData> {
+    const updated = { ...data, updatedAt: new Date().toISOString() };
+    await pgQuery(
+      `INSERT INTO specialty_records (patient_id, odontogram, dental_treatment_plan, pediatrics, updated_at)
+       VALUES ($1,$2::jsonb,$3,$4::jsonb,$5)
+       ON CONFLICT (patient_id) DO UPDATE SET
+         odontogram = EXCLUDED.odontogram,
+         dental_treatment_plan = EXCLUDED.dental_treatment_plan,
+         pediatrics = EXCLUDED.pediatrics,
+         updated_at = EXCLUDED.updated_at`,
+      [updated.patientId, JSON.stringify(updated.odontogram), updated.dentalTreatmentPlan, JSON.stringify(updated.pediatrics), updated.updatedAt]
+    );
+    return updated;
   }
 }

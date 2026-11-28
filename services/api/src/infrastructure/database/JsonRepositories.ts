@@ -9,6 +9,7 @@ import { MedicalAlert } from '../../domain/entities/MedicalAlert';
 import { Review } from '../../domain/entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/WhatsAppMessage';
 import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
+import { MedicalPrescription, PatientSpecialtyData, createDefaultSpecialtyData } from '../../domain/entities/SpecialtyClinical';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -18,7 +19,8 @@ import {
   IAlertRepository,
   IReviewRepository,
   IMessagingService,
-  IMedicationRepository
+  IMedicationRepository,
+  ISpecialtyClinicalRepository
 } from '../../domain/ports/repositories';
 
 export class JsonPatientRepository implements IPatientRepository {
@@ -251,6 +253,31 @@ export class JsonMedicationRepository implements IMedicationRepository {
     order.logAdministration(nurseName, status, notes);
     this.storage.save();
     return order;
+  }
+}
+
+export class JsonSpecialtyClinicalRepository implements ISpecialtyClinicalRepository {
+  private storage = JsonStorage.getInstance();
+
+  async getPrescriptions(): Promise<MedicalPrescription[]> {
+    return [...this.storage.prescriptions];
+  }
+
+  async savePrescription(rx: MedicalPrescription): Promise<MedicalPrescription> {
+    this.storage.prescriptions.unshift(rx);
+    this.storage.save();
+    return rx;
+  }
+
+  async getSpecialtyByPatientId(patientId: string): Promise<PatientSpecialtyData> {
+    return this.storage.specialtyRecords[patientId] || createDefaultSpecialtyData(patientId);
+  }
+
+  async saveSpecialtyData(data: PatientSpecialtyData): Promise<PatientSpecialtyData> {
+    const updated = { ...data, updatedAt: new Date().toISOString() };
+    this.storage.specialtyRecords[data.patientId] = updated;
+    this.storage.save();
+    return updated;
   }
 }
 

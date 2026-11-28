@@ -10,7 +10,8 @@ import {
   JsonAlertRepository,
   JsonReviewRepository,
   JsonMessagingService,
-  JsonMedicationRepository
+  JsonMedicationRepository,
+  JsonSpecialtyClinicalRepository
 } from '../database/JsonRepositories';
 import { isPostgresEnabled } from '../database/PostgresDatabase';
 import {
@@ -22,7 +23,8 @@ import {
   PostgresAlertRepository,
   PostgresReviewRepository,
   PostgresMessagingService,
-  PostgresMedicationRepository
+  PostgresMedicationRepository,
+  PostgresSpecialtyClinicalRepository
 } from '../database/PostgresRepositories';
 
 // Use Cases
@@ -39,7 +41,7 @@ import { AddReviewUseCase } from '../../application/use-cases/AddReviewUseCase';
 // Controllers
 import { AuthController, StatsController } from './controllers/AuthAndStatsControllers';
 import { NursesController, PatientsController } from './controllers/NursesAndPatientsControllers';
-import { ClinicalRecordsController, VitalsController, AlertsController, MedicationsController } from './controllers/ClinicalAndVitalsControllers';
+import { ClinicalRecordsController, VitalsController, AlertsController, MedicationsController, SpecialtyClinicalController } from './controllers/ClinicalAndVitalsControllers';
 import { BookingsController, ReviewsController, WhatsAppController } from './controllers/BookingsReviewsAndWhatsAppControllers';
 
 export function createApiRouter(): Router {
@@ -56,6 +58,7 @@ export function createApiRouter(): Router {
   const reviewRepo = usePg ? new PostgresReviewRepository() : new JsonReviewRepository();
   const messagingService = usePg ? new PostgresMessagingService() : new JsonMessagingService();
   const medicationRepo = usePg ? new PostgresMedicationRepository() : new JsonMedicationRepository();
+  const specialtyRepo = usePg ? new PostgresSpecialtyClinicalRepository() : new JsonSpecialtyClinicalRepository();
 
   // Instantiate Use Cases
   const adminAuthUseCase = new AdminAuthUseCase();
@@ -80,6 +83,7 @@ export function createApiRouter(): Router {
   const reviewsController = new ReviewsController(reviewRepo, addReviewUseCase);
   const waController = new WhatsAppController(messagingService);
   const medicationsController = new MedicationsController(medicationRepo);
+  const specialtyController = new SpecialtyClinicalController(specialtyRepo);
 
   // Health
   router.get('/health', (_req, res) => {
@@ -127,6 +131,12 @@ export function createApiRouter(): Router {
   router.get('/medications/:patientId', medicationsController.getByPatientId);
   router.post('/medications', medicationsController.create);
   router.post('/medications/:id/administer', medicationsController.administer);
+
+  // Multi-Specialty Clinical Suite (Odontología, Pediatría, Recetario CIE-10)
+  router.get('/prescriptions', specialtyController.getPrescriptions);
+  router.post('/prescriptions', specialtyController.createPrescription);
+  router.get('/specialty/:patientId', specialtyController.getSpecialtyByPatient);
+  router.post('/specialty/:patientId', specialtyController.saveSpecialty);
 
   // Alerts
   router.get('/alerts', alertsController.getAll);

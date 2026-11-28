@@ -8,6 +8,7 @@ import { MedicalAlert } from '../entities/MedicalAlert';
 import { Review } from '../entities/Review';
 import { WhatsAppMessage, WhatsAppMessageType } from '../entities/WhatsAppMessage';
 import { MedicationOrder, AdministrationStatus } from '../entities/MedicationOrder';
+import { MedicalPrescription, PatientSpecialtyData } from '../entities/SpecialtyClinical';
 
 export interface IPatientRepository {
   getAll(): Promise<Patient[]>;
@@ -67,5 +68,12 @@ export interface IMedicationRepository {
   getByPatientId(patientId: string): Promise<MedicationOrder[]>;
   save(order: MedicationOrder): Promise<MedicationOrder>;
   logAdministration(id: string, nurseName: string, status: AdministrationStatus, notes?: string): Promise<MedicationOrder | null>;
+}
+
+export interface ISpecialtyClinicalRepository {
+  getPrescriptions(): Promise<MedicalPrescription[]>;
+  savePrescription(rx: MedicalPrescription): Promise<MedicalPrescription>;
+  getSpecialtyByPatientId(patientId: string): Promise<PatientSpecialtyData>;
+  saveSpecialtyData(data: PatientSpecialtyData): Promise<PatientSpecialtyData>;
 }
 

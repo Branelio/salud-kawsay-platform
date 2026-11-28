@@ -200,4 +200,32 @@ export class ApiClientAdapter {
     });
     return res.json();
   }
+
+  static async getPrescriptions() {
+    const res = await fetch(`${API_BASE}/prescriptions`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async createPrescription(payload) {
+    const res = await fetch(`${API_BASE}/prescriptions`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async getSpecialtyData(patientId) {
+    const res = await fetch(`${API_BASE}/specialty/${patientId}`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async saveSpecialtyData(patientId, payload) {
+    const res = await fetch(`${API_BASE}/specialty/${patientId}`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
 }

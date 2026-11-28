@@ -190,6 +190,29 @@ export async function ensurePostgresSchema(): Promise<void> {
           last_administered_by TEXT,
           administration_logs JSONB NOT NULL DEFAULT '[]'::jsonb
         );
+
+        CREATE TABLE IF NOT EXISTS prescriptions (
+          id TEXT PRIMARY KEY,
+          patient_id TEXT NOT NULL,
+          patient_name TEXT NOT NULL,
+          patient_cedula TEXT NOT NULL,
+          specialty TEXT NOT NULL,
+          cie10_code TEXT NOT NULL,
+          cie10_description TEXT NOT NULL,
+          items JSONB NOT NULL DEFAULT '[]'::jsonb,
+          indications TEXT NOT NULL DEFAULT '',
+          doctor_name TEXT NOT NULL,
+          doctor_license TEXT NOT NULL,
+          created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS specialty_records (
+          patient_id TEXT PRIMARY KEY,
+          odontogram JSONB NOT NULL DEFAULT '{}'::jsonb,
+          dental_treatment_plan TEXT NOT NULL DEFAULT '',
+          pediatrics JSONB NOT NULL DEFAULT '{}'::jsonb,
+          updated_at TEXT NOT NULL
+        );
       `);
 
       // Seed baseline patients & Kardex orders if empty
