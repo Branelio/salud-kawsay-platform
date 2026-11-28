@@ -3,11 +3,21 @@ import { Pool, QueryResult, QueryResultRow } from 'pg';
 let pool: Pool | null = null;
 let initPromise: Promise<void> | null = null;
 
+function resolveConnectionString(): string | undefined {
+  const candidates = [
+    process.env.DATABASE_URL,
+    process.env.POSTGRES_URL,
+    process.env.STORAGE_DATABASE_URL,
+    process.env.STORAGE_POSTGRES_URL
+  ];
+  return candidates.find(v => Boolean(v && v.trim().length > 0))?.trim();
+}
+
 /**
  * Returns true when a PostgreSQL connection string (Neon, Supabase, or Docker) is configured.
  */
 export function isPostgresEnabled(): boolean {
-  return Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0);
+  return Boolean(resolveConnectionString());
 }
 
 /**
@@ -15,7 +25,7 @@ export function isPostgresEnabled(): boolean {
  */
 export function getPgPool(): Pool {
   if (!pool) {
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = resolveConnectionString();
     if (!connectionString) {
       throw new Error('DATABASE_URL is not configured');
     }
