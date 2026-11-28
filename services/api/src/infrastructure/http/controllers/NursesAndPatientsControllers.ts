@@ -59,10 +59,26 @@ export class PatientsController {
     private verifyCedulaUseCase: VerifyCedulaUseCase
   ) {}
 
-  getAll = async (_req: Request, res: Response) => {
+  getAll = async (req: Request, res: Response) => {
     try {
-      const patients = await this.patientRepo.getAll();
-      res.json({ success: true, data: patients });
+      let patients = await this.patientRepo.getAll();
+      const search = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase() : '';
+      if (search) {
+        patients = patients.filter(p =>
+          p.fullName.toLowerCase().includes(search) ||
+          p.cedula.toLowerCase().includes(search) ||
+          (p.condition || '').toLowerCase().includes(search)
+        );
+      }
+      const total = patients.length;
+      const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+      const limit = parseInt(String(req.query.limit || '0'), 10) || 0;
+      const data = limit > 0 ? patients.slice((page - 1) * limit, page * limit) : patients;
+      res.json({
+        success: true,
+        data,
+        pagination: { page, limit: limit || total, total, totalPages: limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1 }
+      });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }

@@ -32,7 +32,7 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
   }
 }
 
-export function requireRoles(...allowedRoles: Array<'admin' | 'nurse' | 'family'>) {
+export function requireRoles(...allowedRoles: Array<JwtPayload['role']>) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({

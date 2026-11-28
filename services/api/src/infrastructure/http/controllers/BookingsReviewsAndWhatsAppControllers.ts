@@ -10,10 +10,27 @@ export class BookingsController {
     private createBookingUseCase: CreateBookingUseCase
   ) {}
 
-  getAll = async (_req: Request, res: Response) => {
+  getAll = async (req: Request, res: Response) => {
     try {
-      const bookings = await this.bookingRepo.getAll();
-      res.json({ success: true, data: bookings });
+      let bookings = await this.bookingRepo.getAll();
+      const search = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase() : '';
+      if (search) {
+        bookings = bookings.filter(b =>
+          b.patientName.toLowerCase().includes(search) ||
+          (b.patientCedula || '').toLowerCase().includes(search) ||
+          b.id.toLowerCase().includes(search) ||
+          (b.nurseName || '').toLowerCase().includes(search)
+        );
+      }
+      const total = bookings.length;
+      const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+      const limit = parseInt(String(req.query.limit || '0'), 10) || 0;
+      const data = limit > 0 ? bookings.slice((page - 1) * limit, page * limit) : bookings;
+      res.json({
+        success: true,
+        data,
+        pagination: { page, limit: limit || total, total, totalPages: limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1 }
+      });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err.message });
     }

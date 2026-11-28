@@ -1,4 +1,5 @@
 import { IBookingRepository, IPatientRepository, INurseRepository, IAlertRepository, IReviewRepository } from '../../domain/ports/repositories';
+import { isPostgresEnabled, getAggregatedStatsSql } from '../../infrastructure/database/PostgresDatabase';
 
 export interface PlatformStats {
   totalBookings: number;
@@ -25,6 +26,10 @@ export class GetStatsUseCase {
   ) {}
 
   async execute(): Promise<PlatformStats> {
+    if (isPostgresEnabled()) {
+      return getAggregatedStatsSql();
+    }
+
     const bookings = await this.bookingRepo.getAll();
     const patients = await this.patientRepo.getAll();
     const nurses = await this.nurseRepo.getAll();

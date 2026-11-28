@@ -190,5 +190,72 @@
       "active": true,
       "administrationLogs": []
     }
+  ],
+  "prescriptions": [],
+  "specialtyRecords": {},
+  "invoices": [],
+  "inventoryItems": [
+    {
+      "id": "inv-101",
+      "name": "Guantes de Nitrilo Estériles (Caja x100)",
+      "category": "Enfermería",
+      "sku": "ENF-GUA-100",
+      "lotNumber": "LOT-2026-A8",
+      "expirationDate": "2027-08-15",
+      "stock": 42,
+      "minStock": 15,
+      "unitCostUSD": 7.5,
+      "unit": "caja"
+    },
+    {
+      "id": "inv-102",
+      "name": "Resina Compuesta Nano-Híbrida A2 (3M)",
+      "category": "Odontología",
+      "sku": "ODO-RES-A2",
+      "lotNumber": "LOT-2026-D3",
+      "expirationDate": "2027-03-20",
+      "stock": 8,
+      "minStock": 5,
+      "unitCostUSD": 28,
+      "unit": "jeringa"
+    },
+    {
+      "id": "inv-103",
+      "name": "Suero Fisiológico NaCl 0.9% 500ml",
+      "category": "General",
+      "sku": "GEN-SUE-500",
+      "lotNumber": "LOT-2026-S1",
+      "expirationDate": "2026-12-30",
+      "stock": 12,
+      "minStock": 20,
+      "unitCostUSD": 1.85,
+      "unit": "frasco"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "cit-201",
+      "patientName": "Sra. Carmen Rosa Delgado",
+      "patientPhone": "0998765432",
+      "specialty": "Medicina General",
+      "professionalName": "Dr. Fernando Salazar",
+      "room": "Consultorio 1",
+      "date": "2026-11-28",
+      "time": "09:30",
+      "reason": "Control de presión arterial y ajuste de Enalapril",
+      "status": "confirmada"
+    },
+    {
+      "id": "cit-202",
+      "patientName": "Mateo Sebastián Vega",
+      "patientPhone": "0984412233",
+      "specialty": "Odontología",
+      "professionalName": "Dra. Valeria Mendoza",
+      "room": "Sillón Dental A",
+      "date": "2026-11-28",
+      "time": "11:00",
+      "reason": "Profilaxis y sellantes molares",
+      "status": "en-sala"
+    }
   ]
 }

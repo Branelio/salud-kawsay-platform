@@ -12,6 +12,7 @@ import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/What
 import { MedicationOrder } from '../../domain/entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData } from '../../domain/entities/SpecialtyClinical';
 import { InvoiceRecord, InventoryItem, ClinicAppointment } from '../../domain/entities/ClinicOperations';
+import { ErpUser } from '../../domain/entities/ErpUser';
 
 const DATA_DIR = path.join(__dirname, '../../../data');
 const DATA_FILE = path.join(DATA_DIR, 'database.json');
@@ -34,6 +35,7 @@ export class JsonStorage {
   public invoices: InvoiceRecord[] = [];
   public inventoryItems: InventoryItem[] = [];
   public appointments: ClinicAppointment[] = [];
+  public users: ErpUser[] = [];
 
   private constructor() {
     this.init();
@@ -70,6 +72,7 @@ export class JsonStorage {
         this.invoices = (data.invoices || []).map((i: any) => new InvoiceRecord(i));
         this.inventoryItems = (data.inventoryItems || []).map((it: any) => new InventoryItem(it));
         this.appointments = (data.appointments || []).map((a: any) => new ClinicAppointment(a));
+        this.users = (data.users || []).map((u: any) => new ErpUser(u));
         if (this.inventoryItems.length === 0) {
           this.seedDefaultOperations();
         }
@@ -156,7 +159,8 @@ export class JsonStorage {
         specialtyRecords: this.specialtyRecords,
         invoices: this.invoices,
         inventoryItems: this.inventoryItems,
-        appointments: this.appointments
+        appointments: this.appointments,
+        users: this.users
       };
       fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
     } catch (err: any) {

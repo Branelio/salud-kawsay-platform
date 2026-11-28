@@ -10,6 +10,7 @@ import { WhatsAppMessage, WhatsAppMessageType } from '../entities/WhatsAppMessag
 import { MedicationOrder, AdministrationStatus } from '../entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData } from '../entities/SpecialtyClinical';
 import { InvoiceRecord, InventoryItem, ClinicAppointment, AppointmentStatus } from '../entities/ClinicOperations';
+import { ErpUser } from '../entities/ErpUser';
 
 export interface IPatientRepository {
   getAll(): Promise<Patient[]>;
@@ -87,5 +88,12 @@ export interface IClinicOperationsRepository {
   getAppointments(): Promise<ClinicAppointment[]>;
   saveAppointment(appt: ClinicAppointment): Promise<ClinicAppointment>;
   updateAppointmentStatus(id: string, status: AppointmentStatus): Promise<ClinicAppointment | null>;
+}
+
+export interface IUserRepository {
+  getAll(): Promise<ErpUser[]>;
+  getByUsername(username: string): Promise<ErpUser | null>;
+  save(user: ErpUser): Promise<ErpUser>;
+  toggleActive(id: string): Promise<ErpUser | null>;
 }
 

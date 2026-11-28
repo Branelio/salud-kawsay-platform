@@ -11,6 +11,7 @@ import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/What
 import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData, createDefaultSpecialtyData } from '../../domain/entities/SpecialtyClinical';
 import { InvoiceRecord, InventoryItem, ClinicAppointment, AppointmentStatus } from '../../domain/entities/ClinicOperations';
+import { ErpUser } from '../../domain/entities/ErpUser';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -22,7 +23,8 @@ import {
   IMessagingService,
   IMedicationRepository,
   ISpecialtyClinicalRepository,
-  IClinicOperationsRepository
+  IClinicOperationsRepository,
+  IUserRepository
 } from '../../domain/ports/repositories';
 
 export class JsonPatientRepository implements IPatientRepository {
@@ -330,6 +332,38 @@ export class JsonClinicOperationsRepository implements IClinicOperationsReposito
     appt.status = status;
     this.storage.save();
     return appt;
+  }
+}
+
+export class JsonUserRepository implements IUserRepository {
+  private storage = JsonStorage.getInstance();
+
+  async getAll(): Promise<ErpUser[]> {
+    return [...this.storage.users];
+  }
+
+  async getByUsername(username: string): Promise<ErpUser | null> {
+    const normalized = username.trim().toLowerCase();
+    return this.storage.users.find(u => u.username === normalized) || null;
+  }
+
+  async save(user: ErpUser): Promise<ErpUser> {
+    const idx = this.storage.users.findIndex(u => u.id === user.id || u.username === user.username);
+    if (idx >= 0) {
+      this.storage.users[idx] = user;
+    } else {
+      this.storage.users.unshift(user);
+    }
+    this.storage.save();
+    return user;
+  }
+
+  async toggleActive(id: string): Promise<ErpUser | null> {
+    const user = this.storage.users.find(u => u.id === id);
+    if (!user) return null;
+    user.active = !user.active;
+    this.storage.save();
+    return user;
   }
 }
 

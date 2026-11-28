@@ -11,6 +11,7 @@ import { WhatsAppMessage, WhatsAppMessageType } from '../../domain/entities/What
 import { MedicationOrder, AdministrationStatus } from '../../domain/entities/MedicationOrder';
 import { MedicalPrescription, PatientSpecialtyData, createDefaultSpecialtyData } from '../../domain/entities/SpecialtyClinical';
 import { InvoiceRecord, InventoryItem, ClinicAppointment, AppointmentStatus } from '../../domain/entities/ClinicOperations';
+import { ErpUser } from '../../domain/entities/ErpUser';
 import {
   IPatientRepository,
   IClinicalRecordRepository,
@@ -22,7 +23,8 @@ import {
   IMessagingService,
   IMedicationRepository,
   ISpecialtyClinicalRepository,
-  IClinicOperationsRepository
+  IClinicOperationsRepository,
+  IUserRepository
 } from '../../domain/ports/repositories';
 
 function mapPatient(r: any): Patient {
@@ -646,5 +648,50 @@ export class PostgresClinicOperationsRepository implements IClinicOperationsRepo
       reason: r.reason,
       status: r.status
     });
+  }
+}
+
+export class PostgresUserRepository implements IUserRepository {
+  private mapUser(r: any): ErpUser {
+    return new ErpUser({
+      id: r.id,
+      username: r.username,
+      fullName: r.full_name,
+      role: r.role,
+      specialty: r.specialty,
+      clinicId: r.clinic_id,
+      clinicName: r.clinic_name,
+      passwordHash: r.password_hash,
+      active: r.active,
+      createdAt: r.created_at
+    });
+  }
+
+  async getAll(): Promise<ErpUser[]> {
+    const res = await pgQuery('SELECT * FROM erp_users ORDER BY created_at DESC');
+    return res.rows.map(r => this.mapUser(r));
+  }
+
+  async getByUsername(username: string): Promise<ErpUser | null> {
+    const res = await pgQuery('SELECT * FROM erp_users WHERE username = $1 LIMIT 1', [username.trim().toLowerCase()]);
+    return res.rows[0] ? this.mapUser(res.rows[0]) : null;
+  }
+
+  async save(user: ErpUser): Promise<ErpUser> {
+    await pgQuery(
+      `INSERT INTO erp_users (id, username, full_name, role, specialty, clinic_id, clinic_name, password_hash, active, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (username) DO UPDATE SET
+         full_name = EXCLUDED.full_name, role = EXCLUDED.role, specialty = EXCLUDED.specialty,
+         clinic_id = EXCLUDED.clinic_id, clinic_name = EXCLUDED.clinic_name,
+         password_hash = EXCLUDED.password_hash, active = EXCLUDED.active`,
+      [user.id, user.username, user.fullName, user.role, user.specialty, user.clinicId, user.clinicName, user.passwordHash, user.active, user.createdAt]
+    );
+    return user;
+  }
+
+  async toggleActive(id: string): Promise<ErpUser | null> {
+    const res = await pgQuery('UPDATE erp_users SET active = NOT active WHERE id = $1 RETURNING *', [id]);
+    return res.rows[0] ? this.mapUser(res.rows[0]) : null;
   }
 }

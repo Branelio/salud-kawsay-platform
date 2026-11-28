@@ -5,6 +5,14 @@ import { PrescriptionPanel } from './erp/PrescriptionPanel';
 import { BillingSriPanel } from './erp/BillingSriPanel';
 import { InventoryPanel } from './erp/InventoryPanel';
 import { AgendaPanel } from './erp/AgendaPanel';
+import { UsersRbacPanel } from './erp/UsersRbacPanel';
+
+const ROLE_TABS = {
+  admin: ['reservas', 'evv', 'agenda', 'especialidades', 'emar', 'clientes', 'enfermeras', 'facturacion', 'inventario', 'alertas', 'usuarios'],
+  doctor: ['agenda', 'especialidades', 'emar', 'clientes', 'alertas'],
+  nurse: ['reservas', 'evv', 'emar', 'clientes', 'alertas'],
+  reception: ['reservas', 'agenda', 'clientes', 'facturacion', 'inventario']
+};
 
 export function AdminDashboardModal({ 
   isOpen, 
@@ -21,6 +29,8 @@ export function AdminDashboardModal({
   invoices,
   inventory,
   appointments,
+  users,
+  currentUser,
   onLogoutAdmin, 
   onOpenClinicalRecord, 
   onResolveAlert, 
@@ -38,13 +48,21 @@ export function AdminDashboardModal({
   onCreateInventoryItem,
   onAdjustInventoryStock,
   onCreateAppointment,
-  onUpdateAppointmentStatus
+  onUpdateAppointmentStatus,
+  onCreateUser,
+  onToggleUser
 }) {
-  const [activeTab, setActiveTab] = useState('reservas');
+  const userRole = currentUser?.role || 'admin';
+  const allowedTabs = ROLE_TABS[userRole] || ROLE_TABS.admin;
+  const canAccessTab = (tab) => allowedTabs.includes(tab);
+
+  const [activeTab, setActiveTab] = useState(allowedTabs[0] || 'reservas');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [openGroups, setOpenGroups] = useState({ ops: true, clinical: true, talent: true });
   const [specialtySubTab, setSpecialtySubTab] = useState('odontologia');
+  const [patientSearch, setPatientSearch] = useState('');
+  const [patientPage, setPatientPage] = useState(1);
 
   const toggleGroup = (key) => {
     setOpenGroups(prev => ({ ...prev, [key]: !prev[key] }));
@@ -236,7 +254,8 @@ export function AdminDashboardModal({
     facturacion: { title: 'Caja & Pre-Facturación SRI (Ecuador)', sub: 'Comprobantes electrónicos IVA 0% Salud vs 15% Insumos y Corte de Caja' },
     inventario: { title: 'Inventario Insumos & Lotes ARCSA', sub: 'Control FIFO por lote, fechas de caducidad y alertas de stock crítico' },
     enfermeras: { title: 'Equipo de Salud & Nómina MSP', sub: 'Credenciales SENESCYT/MSP, disponibilidad y honorarios por liquidar' },
-    alertas: { title: 'Monitor de Alertas Clínicas', sub: 'Triage en vivo de signos vitales críticos y advertencias' }
+    alertas: { title: 'Monitor de Alertas Clínicas', sub: 'Triage en vivo de signos vitales críticos y advertencias' },
+    usuarios: { title: 'Usuarios, Roles (RBAC) & Multi-Clínica', sub: 'Control de accesos por especialidad, rol y sede clínica' }
   };
 
   const currentMeta = TAB_META[activeTab] || TAB_META.reservas;
@@ -269,20 +288,26 @@ export function AdminDashboardModal({
             </button>
             {openGroups.ops && (
               <>
-                <button type="button" className={`erp-nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => selectTab('reservas')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas</span>
-                  <span className={`erp-nav-badge ${pendingAssignments > 0 ? 'danger' : ''}`}>
-                    {pendingAssignments > 0 ? pendingAssignments : (bookings ? bookings.length : 0)}
-                  </span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'evv' ? 'active' : ''}`} onClick={() => selectTab('evv')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-map-location-dot"></i> Control EVV (GPS)</span>
-                  <span className="erp-nav-badge">{checkins ? checkins.length : 0}</span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'agenda' ? 'active' : ''}`} onClick={() => selectTab('agenda')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-calendar-week"></i> Agenda Clínica</span>
-                  <span className="erp-nav-badge">{appointments ? appointments.length : 0}</span>
-                </button>
+                {canAccessTab('reservas') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'reservas' ? 'active' : ''}`} onClick={() => selectTab('reservas')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-truck-medical"></i> Despacho & Finanzas</span>
+                    <span className={`erp-nav-badge ${pendingAssignments > 0 ? 'danger' : ''}`}>
+                      {pendingAssignments > 0 ? pendingAssignments : (bookings ? bookings.length : 0)}
+                    </span>
+                  </button>
+                )}
+                {canAccessTab('evv') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'evv' ? 'active' : ''}`} onClick={() => selectTab('evv')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-map-location-dot"></i> Control EVV (GPS)</span>
+                    <span className="erp-nav-badge">{checkins ? checkins.length : 0}</span>
+                  </button>
+                )}
+                {canAccessTab('agenda') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'agenda' ? 'active' : ''}`} onClick={() => selectTab('agenda')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-calendar-week"></i> Agenda Clínica</span>
+                    <span className="erp-nav-badge">{appointments ? appointments.length : 0}</span>
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -294,18 +319,24 @@ export function AdminDashboardModal({
             </button>
             {openGroups.clinical && (
               <>
-                <button type="button" className={`erp-nav-item ${activeTab === 'especialidades' ? 'active' : ''}`} onClick={() => selectTab('especialidades')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-stethoscope"></i> Suite Clínica</span>
-                  <span className="erp-nav-badge">3</span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'emar' ? 'active' : ''}`} onClick={() => selectTab('emar')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-pills"></i> Kardex / eMAR</span>
-                  <span className="erp-nav-badge">{medications ? medications.length : 0}</span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'clientes' ? 'active' : ''}`} onClick={() => selectTab('clientes')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-users"></i> Pacientes</span>
-                  <span className="erp-nav-badge">{patients ? patients.length : 0}</span>
-                </button>
+                {canAccessTab('especialidades') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'especialidades' ? 'active' : ''}`} onClick={() => selectTab('especialidades')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-stethoscope"></i> Suite Clínica</span>
+                    <span className="erp-nav-badge">3</span>
+                  </button>
+                )}
+                {canAccessTab('emar') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'emar' ? 'active' : ''}`} onClick={() => selectTab('emar')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-pills"></i> Kardex / eMAR</span>
+                    <span className="erp-nav-badge">{medications ? medications.length : 0}</span>
+                  </button>
+                )}
+                {canAccessTab('clientes') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'clientes' ? 'active' : ''}`} onClick={() => selectTab('clientes')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-users"></i> Pacientes</span>
+                    <span className="erp-nav-badge">{patients ? patients.length : 0}</span>
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -317,24 +348,38 @@ export function AdminDashboardModal({
             </button>
             {openGroups.talent && (
               <>
-                <button type="button" className={`erp-nav-item ${activeTab === 'enfermeras' ? 'active' : ''}`} onClick={() => selectTab('enfermeras')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-user-nurse"></i> Equipo y Nómina</span>
-                  <span className="erp-nav-badge">{nurses ? nurses.length : 0}</span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'facturacion' ? 'active' : ''}`} onClick={() => selectTab('facturacion')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-file-invoice-dollar"></i> Caja & SRI</span>
-                  <span className="erp-nav-badge">{invoices ? invoices.length : 0}</span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'inventario' ? 'active' : ''}`} onClick={() => selectTab('inventario')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-boxes-stacked"></i> Inventario ARCSA</span>
-                  <span className="erp-nav-badge">{inventory ? inventory.length : 0}</span>
-                </button>
-                <button type="button" className={`erp-nav-item ${activeTab === 'alertas' ? 'active' : ''}`} onClick={() => selectTab('alertas')}>
-                  <span className="erp-nav-item-left"><i className="fa-solid fa-bell"></i> Alertas Médicas</span>
-                  <span className={`erp-nav-badge ${activeAlertsCount > 0 ? 'danger' : ''}`}>
-                    {activeAlertsCount}
-                  </span>
-                </button>
+                {canAccessTab('enfermeras') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'enfermeras' ? 'active' : ''}`} onClick={() => selectTab('enfermeras')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-user-nurse"></i> Equipo y Nómina</span>
+                    <span className="erp-nav-badge">{nurses ? nurses.length : 0}</span>
+                  </button>
+                )}
+                {canAccessTab('facturacion') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'facturacion' ? 'active' : ''}`} onClick={() => selectTab('facturacion')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-file-invoice-dollar"></i> Caja & SRI</span>
+                    <span className="erp-nav-badge">{invoices ? invoices.length : 0}</span>
+                  </button>
+                )}
+                {canAccessTab('inventario') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'inventario' ? 'active' : ''}`} onClick={() => selectTab('inventario')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-boxes-stacked"></i> Inventario ARCSA</span>
+                    <span className="erp-nav-badge">{inventory ? inventory.length : 0}</span>
+                  </button>
+                )}
+                {canAccessTab('usuarios') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'usuarios' ? 'active' : ''}`} onClick={() => selectTab('usuarios')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-user-lock"></i> Usuarios & Roles</span>
+                    <span className="erp-nav-badge">{users ? users.length : 0}</span>
+                  </button>
+                )}
+                {canAccessTab('alertas') && (
+                  <button type="button" className={`erp-nav-item ${activeTab === 'alertas' ? 'active' : ''}`} onClick={() => selectTab('alertas')}>
+                    <span className="erp-nav-item-left"><i className="fa-solid fa-bell"></i> Alertas Médicas</span>
+                    <span className={`erp-nav-badge ${activeAlertsCount > 0 ? 'danger' : ''}`}>
+                      {activeAlertsCount}
+                    </span>
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -342,7 +387,11 @@ export function AdminDashboardModal({
 
         <div className="erp-sidebar-footer">
           <div style={{ fontSize: '12px', color: '#a7f3d0', padding: '0 6px 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <i className="fa-solid fa-user-shield"></i> Sesión: <strong>Admin General</strong>
+            <i className="fa-solid fa-user-shield"></i>
+            <div>
+              <strong>{currentUser?.name || 'Admin General'}</strong>
+              <div style={{ fontSize: '10.5px', opacity: 0.85 }}>{userRole.toUpperCase()} · {currentUser?.clinicName || 'Matriz Quito'}</div>
+            </div>
           </div>
           <button type="button" className="btn-secondary-sm" style={{ width: '100%', background: '#0284c7', color: '#fff' }} onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>
             <i className="fa-solid fa-notes-medical"></i> + Ficha Clínica
@@ -996,13 +1045,37 @@ export function AdminDashboardModal({
           </div>
         )}
 
-        {/* TAB 5: DIRECTORIO DE PACIENTES */}
-        {activeTab === 'clientes' && (
+        {/* TAB 5: DIRECTORIO DE PACIENTES (PAGINADO PARA ESCALA 10K+) */}
+        {activeTab === 'clientes' && (() => {
+          const q = patientSearch.trim().toLowerCase();
+          const filteredPatients = (patients || []).filter(p =>
+            !q ||
+            (p.fullName || '').toLowerCase().includes(q) ||
+            (p.cedula || '').toLowerCase().includes(q) ||
+            (p.condition || '').toLowerCase().includes(q)
+          );
+          const pageSize = 25;
+          const totalPages = Math.max(1, Math.ceil(filteredPatients.length / pageSize));
+          const safePage = Math.min(patientPage, totalPages);
+          const pagedPatients = filteredPatients.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+          return (
           <div className="admin-table-card">
-            <h3>
-              <span><i className="fa-solid fa-address-book"></i> Clientes y Expedientes Médicos</span>
-              <button className="btn-secondary-sm" onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>+ Nueva Ficha por Cédula</button>
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <h3 style={{ margin: 0 }}>
+                <span><i className="fa-solid fa-address-book"></i> Clientes y Expedientes Médicos ({filteredPatients.length})</span>
+              </h3>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o cédula..."
+                  value={patientSearch}
+                  onChange={(e) => { setPatientSearch(e.target.value); setPatientPage(1); }}
+                  style={{ padding: '7px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '13px', minWidth: '220px' }}
+                />
+                <button className="btn-secondary-sm" onClick={() => onOpenClinicalRecord && onOpenClinicalRecord(null)}>+ Nueva Ficha por Cédula</button>
+              </div>
+            </div>
             <div className="table-responsive">
               <table className="admin-table">
                 <thead>
@@ -1018,7 +1091,7 @@ export function AdminDashboardModal({
                   </tr>
                 </thead>
                 <tbody>
-                  {patients && patients.map(p => {
+                  {pagedPatients.map(p => {
                     const cr = p.clinicalRecord || {};
                     return (
                       <tr key={p.id}>
@@ -1040,8 +1113,18 @@ export function AdminDashboardModal({
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px', fontSize: '13px', color: '#475569' }}>
+                <span>Página {safePage} de {totalPages} ({filteredPatients.length} pacientes)</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" className="btn-action-sm" disabled={safePage <= 1} onClick={() => setPatientPage(p => Math.max(1, p - 1))}>Anterior</button>
+                  <button type="button" className="btn-action-sm" disabled={safePage >= totalPages} onClick={() => setPatientPage(p => Math.min(totalPages, p + 1))}>Siguiente</button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          );
+        })()}
 
         {/* TAB 6: ALERTAS MÉDICAS */}
         {activeTab === 'alertas' && (
@@ -1201,6 +1284,15 @@ export function AdminDashboardModal({
             inventory={inventory}
             onCreateItem={onCreateInventoryItem}
             onAdjustStock={onAdjustInventoryStock}
+          />
+        )}
+
+        {/* TAB 11: USUARIOS, ROLES RBAC & MULTI-CLÍNICA */}
+        {activeTab === 'usuarios' && (
+          <UsersRbacPanel
+            users={users}
+            onCreateUser={onCreateUser}
+            onToggleUser={onToggleUser}
           />
         )}
         </div>

@@ -3,7 +3,8 @@ import crypto from 'node:crypto';
 export interface JwtPayload {
   userId: string;
   email: string;
-  role: 'admin' | 'nurse' | 'family';
+  role: 'admin' | 'doctor' | 'nurse' | 'reception' | 'family';
+  clinicId?: string;
   exp?: number;
   iat?: number;
 }

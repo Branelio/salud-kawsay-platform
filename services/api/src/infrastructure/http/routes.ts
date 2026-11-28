@@ -12,7 +12,8 @@ import {
   JsonMessagingService,
   JsonMedicationRepository,
   JsonSpecialtyClinicalRepository,
-  JsonClinicOperationsRepository
+  JsonClinicOperationsRepository,
+  JsonUserRepository
 } from '../database/JsonRepositories';
 import { isPostgresEnabled } from '../database/PostgresDatabase';
 import {
@@ -26,7 +27,8 @@ import {
   PostgresMessagingService,
   PostgresMedicationRepository,
   PostgresSpecialtyClinicalRepository,
-  PostgresClinicOperationsRepository
+  PostgresClinicOperationsRepository,
+  PostgresUserRepository
 } from '../database/PostgresRepositories';
 
 // Use Cases
@@ -41,7 +43,8 @@ import { CreateBookingUseCase } from '../../application/use-cases/CreateBookingU
 import { AddReviewUseCase } from '../../application/use-cases/AddReviewUseCase';
 
 // Controllers
-import { AuthController, StatsController } from './controllers/AuthAndStatsControllers';
+import { AuthController, StatsController, UsersController } from './controllers/AuthAndStatsControllers';
+import { JwtService } from '../security/JwtService';
 import { NursesController, PatientsController } from './controllers/NursesAndPatientsControllers';
 import { ClinicalRecordsController, VitalsController, AlertsController, MedicationsController, SpecialtyClinicalController, ClinicOperationsController } from './controllers/ClinicalAndVitalsControllers';
 import { BookingsController, ReviewsController, WhatsAppController } from './controllers/BookingsReviewsAndWhatsAppControllers';
@@ -62,9 +65,10 @@ export function createApiRouter(): Router {
   const medicationRepo = usePg ? new PostgresMedicationRepository() : new JsonMedicationRepository();
   const specialtyRepo = usePg ? new PostgresSpecialtyClinicalRepository() : new JsonSpecialtyClinicalRepository();
   const clinicOpsRepo = usePg ? new PostgresClinicOperationsRepository() : new JsonClinicOperationsRepository();
+  const userRepo = usePg ? new PostgresUserRepository() : new JsonUserRepository();
 
   // Instantiate Use Cases
-  const adminAuthUseCase = new AdminAuthUseCase();
+  const adminAuthUseCase = new AdminAuthUseCase(new JwtService(), userRepo);
   const getStatsUseCase = new GetStatsUseCase(bookingRepo, patientRepo, nurseRepo, alertRepo, reviewRepo);
   const checkinNurseUseCase = new CheckinNurseUseCase(nurseRepo, patientRepo, messagingService);
   const verifyCedulaUseCase = new VerifyCedulaUseCase(patientRepo, clinicalRepo);
@@ -77,6 +81,7 @@ export function createApiRouter(): Router {
   // Instantiate Controllers
   const authController = new AuthController(adminAuthUseCase);
   const statsController = new StatsController(getStatsUseCase);
+  const usersController = new UsersController(userRepo);
   const nursesController = new NursesController(nurseRepo, checkinNurseUseCase);
   const patientsController = new PatientsController(patientRepo, verifyCedulaUseCase);
   const clinicalController = new ClinicalRecordsController(clinicalRepo, saveClinicalRecordUseCase);
@@ -99,9 +104,12 @@ export function createApiRouter(): Router {
     });
   });
 
-  // Auth & Stats
+  // Auth, Users & Stats
   router.post('/auth/login', authController.login);
   router.get('/stats', statsController.getStats);
+  router.get('/users', usersController.getAll);
+  router.post('/users', usersController.create);
+  router.patch('/users/:id/toggle', usersController.toggleActive);
 
   // Nurses & Checkins
   router.get('/nurses', nursesController.getAll);

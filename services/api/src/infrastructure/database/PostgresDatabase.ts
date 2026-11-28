@@ -256,6 +256,32 @@ export async function ensurePostgresSchema(): Promise<void> {
           reason TEXT NOT NULL,
           status TEXT NOT NULL DEFAULT 'confirmada'
         );
+
+        CREATE TABLE IF NOT EXISTS erp_users (
+          id TEXT PRIMARY KEY,
+          username TEXT UNIQUE NOT NULL,
+          full_name TEXT NOT NULL,
+          role TEXT NOT NULL,
+          specialty TEXT NOT NULL DEFAULT 'General',
+          clinic_id TEXT NOT NULL DEFAULT 'clinic-kawsay-hq',
+          clinic_name TEXT NOT NULL DEFAULT 'Salud Kawsay Matriz Quito',
+          password_hash TEXT NOT NULL,
+          active BOOLEAN NOT NULL DEFAULT TRUE,
+          created_at TEXT NOT NULL
+        );
+
+        -- High-scale B-Tree indexes for 10k+ patients & 100k+ clinical transactions
+        CREATE INDEX IF NOT EXISTS idx_patients_cedula ON patients (cedula);
+        CREATE INDEX IF NOT EXISTS idx_patients_name ON patients (full_name);
+        CREATE INDEX IF NOT EXISTS idx_bookings_status_nurse ON bookings (status, assigned_nurse_id);
+        CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings (created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_vitals_patient_ts ON vital_logs (patient_id, timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_checkins_ts ON nurse_checkins (timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_medications_patient ON medications (patient_id);
+        CREATE INDEX IF NOT EXISTS idx_prescriptions_patient_ts ON prescriptions (patient_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_invoices_doc_ts ON invoices (client_document, issued_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_appointments_date_spec ON clinic_appointments (date DESC, specialty, status);
+        CREATE INDEX IF NOT EXISTS idx_erp_users_clinic_role ON erp_users (clinic_id, role);
       `);
 
       // Seed baseline patients & Kardex orders if empty
@@ -310,4 +336,40 @@ export async function ensurePostgresSchema(): Promise<void> {
 export async function pgQuery<T extends QueryResultRow = any>(text: string, params: any[] = []): Promise<QueryResult<T>> {
   await ensurePostgresSchema();
   return getPgPool().query<T>(text, params);
+}
+
+/**
+ * Computes platform KPIs directly inside PostgreSQL using aggregated SUM/COUNT queries (O(1) payload).
+ */
+export async function getAggregatedStatsSql() {
+  const res = await pgQuery(`
+    SELECT
+      (SELECT COUNT(*)::int FROM bookings) AS total_bookings,
+      (SELECT COUNT(*)::int FROM patients) AS active_patients,
+      (SELECT COUNT(*)::int FROM nurses) AS total_nurses,
+      (SELECT COUNT(*)::int FROM medical_alerts WHERE resolved = FALSE) AS active_alerts,
+      (SELECT COUNT(*)::int FROM reviews) AS total_reviews,
+      (SELECT COALESCE(ROUND(AVG(rating)::numeric, 1), 5.0)::text FROM reviews) AS avg_rating,
+      (SELECT COALESCE(SUM(total_price_usd), 0)::float FROM bookings) AS total_revenue_usd,
+      (SELECT COALESCE(SUM(nurse_payout_usd), 0)::float FROM bookings) AS total_nurse_payout_usd,
+      (SELECT COUNT(*)::int FROM bookings WHERE status = 'pendiente' OR assigned_nurse_id IS NULL) AS pending_assignments
+  `);
+  const r = res.rows[0];
+  const totalRevenueUSD = Number(r.total_revenue_usd) || 0;
+  const totalNursePayoutUSD = Number(r.total_nurse_payout_usd) || 0;
+  const netAgencyMarginUSD = Number((totalRevenueUSD - totalNursePayoutUSD).toFixed(2));
+  const marginPercentage = totalRevenueUSD > 0 ? ((netAgencyMarginUSD / totalRevenueUSD) * 100).toFixed(1) : '0.0';
+  return {
+    totalBookings: r.total_bookings,
+    activePatients: r.active_patients,
+    totalNurses: r.total_nurses,
+    activeAlerts: r.active_alerts,
+    avgRating: r.avg_rating,
+    totalReviews: r.total_reviews,
+    totalRevenueUSD,
+    totalNursePayoutUSD,
+    netAgencyMarginUSD,
+    marginPercentage,
+    pendingAssignments: r.pending_assignments
+  };
 }

@@ -20,6 +20,15 @@ export function App() {
     typeof window !== 'undefined' ? window.location.pathname : '/'
   );
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('homecare_erp_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [users, setUsers] = useState([]);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [nurses, setNurses] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -129,6 +138,9 @@ export function App() {
 
       const apptRes = await ApiClientAdapter.getAppointments();
       if (apptRes.success) setAppointments(apptRes.data);
+
+      const usersRes = await ApiClientAdapter.getUsers();
+      if (usersRes.success) setUsers(usersRes.data);
     } catch (err) {
       console.error(err);
     }
@@ -156,9 +168,11 @@ export function App() {
       const res = await ApiClientAdapter.loginAdmin(username, password);
       if (res.success) {
         setIsAdminLoggedIn(true);
+        setCurrentUser(res.user || null);
         localStorage.setItem('homecare_admin_token', res.token);
+        if (res.user) localStorage.setItem('homecare_erp_user', JSON.stringify(res.user));
         setIsAdminLoginOpen(false);
-        showToast('¡Bienvenido! Accediendo al módulo Salud Kawsay ERP.', 'success');
+        showToast(`¡Bienvenido ${res.user?.name || ''}! Accediendo al ERP.`, 'success');
         loadAdminStats();
         navigateTo('/erp');
       } else {
@@ -171,8 +185,10 @@ export function App() {
 
   const handleAdminLogout = () => {
     setIsAdminLoggedIn(false);
+    setCurrentUser(null);
     setIsAdminDashboardOpen(false);
     localStorage.removeItem('homecare_admin_token');
+    localStorage.removeItem('homecare_erp_user');
     showToast('Sesión administrativa finalizada.', 'info');
     navigateTo('/');
   };
@@ -480,6 +496,32 @@ export function App() {
     }
   };
 
+  const handleCreateUser = async (userPayload) => {
+    try {
+      const res = await ApiClientAdapter.createUser(userPayload);
+      if (res.success) {
+        showToast(`Usuario ${res.data.name} (${res.data.role}) creado con éxito.`, 'success');
+        loadAdminStats();
+      } else {
+        showToast(res.error || 'Error creando usuario.', 'error');
+      }
+    } catch (err) {
+      showToast('Error conectando con la API de usuarios.', 'error');
+    }
+  };
+
+  const handleToggleUser = async (userId) => {
+    try {
+      const res = await ApiClientAdapter.toggleUserActive(userId);
+      if (res.success) {
+        showToast(`Estado de usuario actualizado.`, 'info');
+        loadAdminStats();
+      }
+    } catch (err) {
+      showToast('Error actualizando usuario.', 'error');
+    }
+  };
+
   const handleSendWaSimMessage = async (message) => {
     try {
       const res = await ApiClientAdapter.sendWaWebhook('0998765432', message);
@@ -523,6 +565,8 @@ export function App() {
             invoices={invoices}
             inventory={inventory}
             appointments={appointments}
+            users={users}
+            currentUser={currentUser}
             onLogoutAdmin={handleAdminLogout} 
             onOpenClinicalRecord={handleOpenClinicalRecord} 
             onResolveAlert={handleResolveAlert} 
@@ -541,6 +585,8 @@ export function App() {
             onAdjustInventoryStock={handleAdjustInventoryStock}
             onCreateAppointment={handleCreateAppointment}
             onUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+            onCreateUser={handleCreateUser}
+            onToggleUser={handleToggleUser}
           />
         )}
 

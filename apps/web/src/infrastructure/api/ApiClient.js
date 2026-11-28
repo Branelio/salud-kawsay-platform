@@ -288,4 +288,26 @@ export class ApiClientAdapter {
     });
     return res.json();
   }
+
+  static async getUsers() {
+    const res = await fetch(`${API_BASE}/users`, { headers: getHeaders() });
+    return res.json();
+  }
+
+  static async createUser(payload) {
+    const res = await fetch(`${API_BASE}/users`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  static async toggleUserActive(id) {
+    const res = await fetch(`${API_BASE}/users/${id}/toggle`, {
+      method: 'PATCH',
+      headers: getHeaders()
+    });
+    return res.json();
+  }
 }
